@@ -1,0 +1,10 @@
+planet,planet_type,distance_from_sun,mass,diameter,density,gravity,day_length,avg_temp,number_of_moons,orbital_period
+Mercury,Terrestrial,57.9,0.33,4879,5429,,-15000,167,0,88
+Venus,Terrestrial,108.2,,,5243,8.9,,464,,224.7
+Earth,Terrestrial,149.6,5.97,12756,,9.8,24,15,1,365.2
+Mars,Terrestrial,228,0.64,6792,3934,3.7,24.7,-65,2,
+Jupiter,Gas Giant,778.5,1898,142984,1326,23.1,9.9,-110,79,4331
+Saturn,Gas Giant,1432,568,120536,687,9,10.7,-140,82,
+Uranus,Ice Giant,2867,86.8,51118,1270,8.7,,,27,30589
+Neptune,Ice Giant,4515,102,,,11,16.1,-200,14,59800
+Pluto,,5906.4,0.013,2376,1850,,153.3,-225,,90560
