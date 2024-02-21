@@ -1,0 +1,1 @@
+A repository for small and random scripts for data analysis or random ideas, mainly just practice

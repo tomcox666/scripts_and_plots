@@ -1,0 +1,1 @@
+A collection of datafiles (mainly csv) for random data analysis ideas

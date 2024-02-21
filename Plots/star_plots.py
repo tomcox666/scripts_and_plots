@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read the CSV file into a DataFrame
-df = pd.read_csv("~/data_annotation/plot_data/EX97_stars.csv")
+df = pd.read_csv("../plot_data/EX97_stars.csv")
 
 # Display the first 5 rows
 print(df.head())

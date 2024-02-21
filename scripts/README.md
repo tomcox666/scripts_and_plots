@@ -1,0 +1,1 @@
+A collection of scripts for various, small and random purposes

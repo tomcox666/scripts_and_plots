@@ -16,6 +16,6 @@ def is_triangle_number(n):
     return ((8 * n + 1)**0.5 - 1) % 2 == 0
 
 if __name__ == "__main__":
-    file_path = 'message_file.txt'
+    file_path = '../plot_data/triangle_number_code.txt'
     out = decode_message(file_path)
     print(out)

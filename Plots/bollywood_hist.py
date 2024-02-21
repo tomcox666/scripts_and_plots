@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read the data from the CSV file
-file_path = "~/data_annotation/plot_data/Top_1000_Bollywood_Movies.csv"
+file_path = "../plot_data/Top_1000_Bollywood_Movies.csv"
 df = pd.read_csv(file_path)
 
 # Plot histograms for Indian Gross and Indian Net

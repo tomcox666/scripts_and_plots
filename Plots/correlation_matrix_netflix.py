@@ -4,7 +4,7 @@ import pandas as pd
 import seaborn as sns
 
 # Import data
-data = pd.read_csv('~/data_annotation/plot_data/Netflix_TV_Shows_and_Movies.csv')
+data = pd.read_csv('../plot_data/Netflix_TV_Shows_and_Movies.csv')
 column1 = 'Temperature (Celsius)'
 column2 = 'Precipitation (mm)'
 

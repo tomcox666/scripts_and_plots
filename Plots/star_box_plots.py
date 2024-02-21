@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Read the CSV file into a Pandas DataFrame
-df = pd.read_csv("~/data_annotation/plot_data/EX97_stars.csv")
+df = pd.read_csv("../plot_data/EX97_stars.csv")
 
 # 1. Calculate descriptive statistics
 temp_stats = df['Temperature (K)'].describe()

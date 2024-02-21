@@ -50,7 +50,7 @@ def search_capital_cities(file_name, letters):
     return matches
 
 if __name__ == "__main__":
-    file_name = os.path.expanduser("~/data_annotation/plot_data/capital_cities.csv")
+    file_name = os.path.expanduser("../plot_data/capital_cities.csv")
     
     while True:
         letters = input(f"{Fore.WHITE}Enter letters to search for (type 'exit' to quit): ")

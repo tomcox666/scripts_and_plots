@@ -1,5 +1,7 @@
 # It counts the number of words, lines, and characters in the provided text.
 
+import os
+
 def count_words(text):
     """
     Counts the number of words in a text.
@@ -39,16 +41,31 @@ def count_characters(text):
     return len(text)
 
 if __name__ == "__main__":
-    # Sample text for text processing
-    sample_text = """
-    Python is a versatile programming language.
-    It is used for web development, data science, artificial intelligence, and more.
-    Learning Python is fun and rewarding.
-    """
+    # Prompt the user to choose between file input and text input
+    input_type = input("Do you want to input a file path (F) or a text string (T) for analysis? ").upper()
 
-    word_count = count_words(sample_text)
-    line_count = count_lines(sample_text)
-    char_count = count_characters(sample_text)
+    if input_type == 'F':
+        # Prompt user for the file path
+        file_path = input("Enter the path to the text file: ")
+
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            print("File not found.")
+            exit()
+
+        # Read text from the file
+        with open(file_path, 'r') as file:
+            text = file.read()
+    elif input_type == 'T':
+        # Input text directly
+        text = input("Enter the text for analysis: ")
+    else:
+        print("Invalid input type. Please choose either 'F' for file path or 'T' for text string.")
+        exit()
+
+    word_count = count_words(text)
+    line_count = count_lines(text)
+    char_count = count_characters(text)
 
     print("Word count:", word_count)
     print("Line count:", line_count)

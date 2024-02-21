@@ -27,4 +27,4 @@ data = pd.DataFrame({
 print(data.head())
 
 # Save the dataset to a CSV file
-data.to_csv('~/data_annotation/plot_data/tc_environmental_data.csv', index=False)
+data.to_csv('../plot_data/tc_environmental_data.csv', index=False)
