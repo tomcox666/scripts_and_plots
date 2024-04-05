@@ -1,1 +1,3 @@
 **/allCountries.csv
+**/image_classification/images
+**/image_classification/classifier/car_classifier.h5
