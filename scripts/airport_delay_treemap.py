@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 
-# Example DataFrame with expanded data including European airports
+"""# Example DataFrame with expanded data including European airports
 df_airport_delays = pd.DataFrame({
     'LOCATION': ['US', 'US', 'US', 'US', 'US', 'US', 'US', 'EU', 'EU', 'EU', 'EU', 'EU', 'EU'],
     'OR_STATE': ['OREGON', 'OREGON', 'OREGON', 'CALIFORNIA', 'CALIFORNIA', 'WASHINGTON', 'WASHINGTON',
@@ -14,7 +14,10 @@ df_airport_delays = pd.DataFrame({
                 'AIR FRANCE', 'EASYJET', 'LUFTHANSA', 'LUFTHANSA', 'BRITISH AIRWAYS', 'EASYJET'],
     'NUM_OF_FLIGHTS_BY_AIRLINE_AIRPORT': [100, 50, 25, 75, 125, 80, 40, 120, 90, 70, 50, 110, 60],
     'AVG_DELAY_BY_AIRLINE': [10, 5, -5, 15, 20, 8, 12, 10, 8, 5, 10, 15, 12]
-})
+})"""
+
+#import data
+df_airport_delays = pd.read_csv('../plot_data/air_traffic_data.csv')
 
 # Create treemap chart figure
 fig = px.treemap(df_airport_delays, 
@@ -56,6 +59,7 @@ fig.update_traces(
                   'Flights: %{value}<br>' +
                   'Avg Delay: %{color}<extra></extra>'
 )
+
 
 # Show the plot
 fig.show()
