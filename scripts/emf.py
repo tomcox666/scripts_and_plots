@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
 
 # Constants
 k = 8.9875517923e9  # Coulomb's constant
@@ -17,7 +19,7 @@ for i in range(num_charges):
 
 # Parameters for grid and plot limits
 grid_size = (100, 100)  # Number of points in the x and y directions
-xlim = (0, 10)  # Plot limits 
+xlim = (0, 10)  # Plot limits
 ylim = (0, 10)
 
 # Function to calculate the electric field at each grid point
@@ -41,40 +43,47 @@ def electric_potential(X, Y, charges):
         dx = X - charge_x
         dy = Y - charge_y
         r = np.sqrt(dx**2 + dy**2)
-        r[r < 1e-6] = 1e-6
+        r[r < 1e-6] = 1e-6  # Prevent division by zero
         potential += k * q / r
     return potential
 
 # Create the grid for calculation
-X, Y = np.meshgrid(np.linspace(xlim[0], xlim[1], grid_size[0]),
+X, Y = np.meshgrid(np.linspace(xlim[0], xlim[1], grid_size[0]), 
                    np.linspace(ylim[0], ylim[1], grid_size[1]))
 
 # Calculate the electric field at each point
 E_x, E_y = electric_field(X, Y, charges)
 
-# Normalize for better visualization in the plot
-magnitude = np.sqrt(E_x**2 + E_y**2)
-E_x /= magnitude
-E_y /= magnitude
+# Calculate the field strength
+field_strength = np.sqrt(E_x**2 + E_y**2)
+
+# Plot the field strength as a colormap
+fig, ax = plt.subplots(figsize=(8, 6))
+im = ax.imshow(field_strength, extent=(xlim[0], xlim[1], ylim[0], ylim[1]), 
+               origin='lower', cmap='viridis', alpha=0.7, aspect='auto')
 
 # Plot electric field lines
-plt.figure(figsize=(8, 6))
-plt.streamplot(X, Y, E_x, E_y, density=1.5, color='k')
+ax.streamplot(X, Y, E_x, E_y, density=1.5, color='k', linewidth=1)
 
 # Plot charges with color intensity based on their magnitude
 max_charge = max(abs(charge[2]) for charge in charges)  # Find the maximum charge
 for charge in charges:
     intensity = abs(charge[2]) / max_charge  # Normalize intensity
     color = 'red' if charge[2] > 0 else 'blue'
-    plt.scatter(charge[0], charge[1], c=color, s=70, alpha=intensity)
+    ax.scatter(charge[0], charge[1], c=color, s=70, alpha=intensity)
 
 # Plot equipotential lines
-plt.contour(X, Y, electric_potential(X, Y, charges), levels=10, colors='gray')
+ax.contour(X, Y, electric_potential(X, Y, charges), levels=10, colors='gray')
 
 # Configure plot
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.xlim(xlim)
-plt.ylim(ylim)
-plt.title('Electric Field Simulation with Variable Charge Density')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_xlim(xlim)
+ax.set_ylim(ylim)
+ax.set_title('Electric Field Simulation with Colormap')
+
+# Create a colorbar linked to the colormap
+fig.colorbar(ScalarMappable(norm=Normalize(), cmap='viridis'), ax=ax, label='Field Strength')
+
+# Show the plot
 plt.show()
