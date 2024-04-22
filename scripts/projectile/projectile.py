@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-from matplotlib.animation import FuncAnimation  # For dynamic visualization
+from matplotlib.animation import FuncAnimation
 import math
 
 # Function to generate variable wind
@@ -11,7 +11,7 @@ def wind_function(t):
     wind_y = 1 * np.cos(0.3 * t)
 
     # Add random gusts
-    gust = np.random.normal(0, 0.5, 2)  # Random 2D wind gusts
+    gust = np.random.normal(0, 0.5, 2)
     wind_x += gust[0]
     wind_y += gust[1]
 
@@ -37,14 +37,14 @@ def projectile_motion_3d_with_obstacles(v0, theta, phi, g, obstacles, drag_coeff
 
     # Simulation step and other constants
     dt = 0.01
-    mass = 1.0  # Assume mass of projectile
+    mass = 1.0
     time_list = []
     x_list = []
     y_list = []
     z_list = []
-    wind_data = []  # Initialize wind data list
+    wind_data = []
 
-    # Calculate forces, including variable wind
+    # Function to calculate forces, including variable wind
     def calculate_forces(vx, vy, vz, t):
         speed = np.sqrt(vx ** 2 + vy ** 2 + vz ** 2)
         drag_magnitude = 0.5 * drag_coeff * air_density * area * speed ** 2
@@ -94,8 +94,8 @@ def projectile_motion_3d_with_obstacles(v0, theta, phi, g, obstacles, drag_coeff
             ox, oy, oz, ow, oh, od = obstacle
             if (
                 ox <= x <= ox + ow
-                and oy <= y <= oy + oh
-                and oz <= z <= oz + od
+                and oy <= oy + oh
+                and oz <= oz + od
             ):
                 return t, x_list, y_list, z_list, max_height, wind_data
 
@@ -117,6 +117,15 @@ g = 9.81  # Gravitational acceleration
 # Simulate the motion and get the results
 t_final, x_list, y_list, z_list, max_height, wind_data = projectile_motion_3d_with_obstacles(v0, theta, phi, g, obstacles)
 
+# Compute the average wind speed
+wind_magnitudes = [np.sqrt(w[0] ** 2 + w[1] ** 2 + w[2] ** 2) for w in wind_data]
+avg_wind_speed = np.mean(wind_magnitudes)
+
+# Compute the maximum wind speeds for x, y, z components
+max_wind_x = np.max([w[0] for w in wind_data])
+max_wind_y = np.max([w[1] for w in wind_data])
+max_wind_z = np.max([w[2] for w in wind_data])
+
 # Create the 3D plot for animation
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -129,7 +138,7 @@ for obstacle in obstacles:
     ox, oy, oz, ow, oh, od = obstacle
     ax.bar3d(ox, oy, oz, ow, oh, od, color='red', alpha=0.5)
 
-# Set axis labels and title
+# Set axis labels with 2 decimal places
 ax.set_xlabel("Distance X (m)")
 ax.set_ylabel("Distance Y (m)")
 ax.set_zlabel("Height Z (m)")
@@ -156,11 +165,12 @@ def update_animation(frame, x_list, y_list, z_list, wind_data):
 num_frames = len(x_list)
 ani = FuncAnimation(fig, update_animation, frames=num_frames, fargs=(x_list, y_list, z_list, wind_data), interval=50, blit=False)
 
-# Display additional information
-print("Total flight time:", t_final, "seconds")
-print("Maximum height reached:", max_height, "meters")
-print("Final wind speed:", wind_data[-1], "m/s")
-print("Range in X:", x_list[-1], "m")
-print("Range in Y:", y_list[-1], "m")
+# Display additional information with 2 decimal places
+print(f"Total flight time: {t_final:.2f} seconds")
+print(f"Maximum height reached: {max_height:.2f} meters")
+print(f"Average wind speed: {avg_wind_speed:.2f} m/s")
+print(f"Maximum wind speeds (X, Y, Z): {max_wind_x:.2f} m/s, : {max_wind_y:.2f} m/s, : {max_wind_z:.2f} m/s")
+print(f"Range in X: {x_list[-1]:.2f} m")
+print(f"Range in Y: {y_list[-1]:.2f} m")
 
 plt.show()
