@@ -1,15 +1,41 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import configparser
 from scipy.integrate import solve_ivp
 
-# Function to get float input from user with error handling
-def get_float_input(prompt):
-    while True:
-        try:
-            value = float(input(prompt))
-            return value
-        except ValueError:
-            print("Invalid input. Please enter a number.")
+# Read parameters from config.ini
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+# General configuration
+t_span_start = float(config["General"]["t_span_start"])
+t_span_end = float(config["General"]["t_span_end"])
+t_span = (t_span_start, t_span_end)
+t_eval_points = int(config["General"]["t_eval_points"])
+t_eval = np.linspace(t_span_start, t_span_end, t_eval_points)
+
+num_oscillators = int(config["General"]["num_oscillators"])
+
+oscillators = []
+
+# Read each oscillator's parameters from the config file
+for i in range(num_oscillators):
+    section = f"Oscillator{i+1}"
+    m = float(config[section]["mass"])
+    k = float(config[section]["spring_constant"])
+    c = float(config[section]["damping_coefficient"])
+    x0 = float(config[section]["initial_displacement"])
+    v0 = float(config[section]["initial_velocity"])
+
+    osc = {
+        "m": m,
+        "k": k,
+        "c": c,
+        "x0": x0,
+        "v0": v0,
+        "title": f"Oscillator {i + 1}",
+    }
+    oscillators.append(osc)
 
 # Function to simulate damped harmonic oscillators
 def damped_oscillator(t, y, m, k, c):
@@ -56,34 +82,7 @@ def plot_oscillator(sol, m, k, title):
     plt.tight_layout()
     plt.show()
 
-# Time span and evaluation points
-t_span = (0, 20)
-t_eval = np.linspace(0, 20, 500)
-
-# Ask user for the number of oscillators to simulate
-num_oscillators = int(input("How many damped harmonic oscillators would you like to simulate? "))
-
-oscillators = []
-
-# Get system parameters for each oscillator from user input
-for i in range(num_oscillators):
-    m = get_float_input(f"Enter the mass (kg) for Oscillator {i+1}: ")
-    k = get_float_input(f"Enter the spring constant (N/m) for Oscillator {i+1}: ")
-    c = get_float_input(f"Enter the damping coefficient (Ns/m) for Oscillator {i+1}: ")
-    x0 = get_float_input(f"Enter the initial displacement (m) for Oscillator {i+1}: ")
-    v0 = get_float_input(f"Enter the initial velocity (m/s) for Oscillator {i+1}: ")
-
-    osc = {
-        "m": m,
-        "k": k,
-        "c": c,
-        "x0": x0,
-        "v0": v0,
-        "title": f"Oscillator {i+1}",
-    }
-    oscillators.append(osc)
-
-# Simulate and plot individual oscillators for comparison
+# Simulate individual oscillators and plot their behavior
 for osc in oscillators:
     sol = solve_ivp(
         lambda t, y: damped_oscillator(t, y, osc["m"], osc["k"], osc["c"]),
@@ -93,6 +92,7 @@ for osc in oscillators:
     )
     plot_oscillator(sol, osc["m"], osc["k"], osc["title"])
 
+# Simulate coupled oscillators if more than one oscillator exists
 if len(oscillators) > 1:
     # Function to simulate coupled oscillators
     def coupled_oscillator(t, y, k_coupling, c_coupling):
@@ -107,11 +107,11 @@ if len(oscillators) > 1:
 
         return [dx1dt, dv1dt, dx2dt, dv2dt]
 
-    # Get coupling parameters from the user
-    k_coupling = get_float_input("Enter the coupling spring constant (N/m): ")
-    c_coupling = get_float_input("Enter the coupling damping coefficient (Ns/m): ")
+    # Read coupling parameters from the config file
+    k_coupling = float(config["Coupling"]["spring_constant"])
+    c_coupling = float(config["Coupling"]["damping_coefficient"])
 
-    # Initial conditions for coupled system
+    # Initial conditions for the coupled system
     x1_0 = oscillators[0]["x0"]
     v1_0 = oscillators[0]["v0"]
     x2_0 = oscillators[1]["x0"]
@@ -125,7 +125,7 @@ if len(oscillators) > 1:
         t_eval=t_eval,
     )
 
-    # Plot results for the coupled system
+    # Plot results for the coupled oscillators
     fig, axs = plt.subplots(2, 1, figsize=(10, 6))
     axs[0].plot(sol_coupled.t, sol_coupled.y[0], label='Oscillator 1 Position', color='b')
     axs[0].plot(sol_coupled.t, sol_coupled.y[2], label='Oscillator 2 Position', color='r')
