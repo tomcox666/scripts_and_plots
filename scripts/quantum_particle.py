@@ -59,6 +59,33 @@ def energy_2d(nx, ny, Lx, Ly):
     """
     return (hbar**2 * np.pi**2) / (2 * m) * ((nx/Lx)**2 + (ny/Ly)**2)
 
+# Finding Degeneracies
+def find_degeneracies(max_energy):
+    """Finds and groups degenerate energy states up to a given maximum energy.
+
+    Args:
+        max_energy: The maximum energy to consider (in Joules)
+
+    Returns:
+        A list of lists, where each inner list contains the (nx, ny) quantum
+        number combinations that yield the same degenerate energy level.
+    """
+    degeneracies = []
+    max_n = int(np.sqrt(2 * m * max_energy * max(Lx, Ly)**2 / (hbar**2 * np.pi**2)))  # Estimate max nx, ny values
+
+    for nx in range(1, max_n + 1):
+        for ny in range(1, max_n + 1):
+            energy = energy_2d(nx, ny, Lx, Ly)
+            if energy <= max_energy:
+                for group in degeneracies:
+                    if abs(energy - energy_2d(group[0][0], group[0][1], Lx, Ly)) < 1e-8:  # Check if already recorded
+                        group.append((nx, ny))  
+                        break  
+                else: 
+                    degeneracies.append([(nx, ny)])  # New degeneracy group
+
+    return degeneracies
+
 def calculate_energy_difference(n):
     """Calculates the energy difference between energy level n and n-1.
 
@@ -163,6 +190,28 @@ def visualize_2d(nx, ny, Lx, Ly):
     plt.ylabel("y (m)")
     plt.title(f"Particle in a 2D Box - Energy Level (nx={nx}, ny={ny}), Energy: {energy_2d(nx, ny, Lx, Ly):.3e} J")
     plt.show()
+
+def plot_degeneracies(degeneracies):
+    """Plots a diagram representing the degeneracies.
+
+    Args:
+        degeneracies: A list of lists, where each inner list represents a degenerate group.
+    """
+    colors = ['red', 'blue', 'green', 'orange', 'purple', 'cyan', 'magenta']  # Colors for different groups
+    max_degeneracy = max(len(group) for group in degeneracies)
+
+    plt.figure(figsize=(6, 5))
+
+    for i, group in enumerate(degeneracies):
+        for j, (nx, ny) in enumerate(group):
+            x_offset = (j - len(group) / 2 + 0.5) / max_degeneracy 
+            plt.scatter(energy_2d(nx, ny, Lx, Ly), i + x_offset, color=colors[i % len(colors)], s=80)
+            plt.text(energy_2d(nx, ny, Lx, Ly), i + x_offset, f"({nx}, {ny})", fontsize=8, ha='center')
+
+    plt.xlabel("Energy (J)")
+    plt.ylabel("Degeneracy Level")
+    plt.title("Degenerate Energy Levels in a 2D Box")
+    plt.show()
     
 # User Input
 num_levels = int(input("Enter the number of energy levels to visualize (positive integer): "))
@@ -171,6 +220,10 @@ visualize_particle(num_levels, plot_differences=True,  plot_expected_pos=True)
 nx = int(input("Enter the energy level in the x-dimension (positive integer): "))
 ny = int(input("Enter the energy level in the y-dimension (positive integer): "))
 visualize_2d(nx, ny, Lx, Ly)
+
+max_search_energy = 20 * (hbar**2 * np.pi**2) / (2 * m * Lx**2)  # Search for some energy states
+degeneracy_groups = find_degeneracies(max_search_energy)
+plot_degeneracies(degeneracy_groups)
 
 # Explanation (printed to the console)
 print("\nExplanation:")
