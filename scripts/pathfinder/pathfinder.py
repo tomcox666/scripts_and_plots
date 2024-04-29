@@ -255,7 +255,7 @@ def visualize_paths(grid, start, goal, paths):
     plt.tight_layout()
     plt.show()
 
-def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_threshold=0.8, max_swamp_distance=15):
+def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_threshold=0.6, max_swamp_distance=12):
     # Define noise parameters
     octaves = 6
     persistence = 0.5
