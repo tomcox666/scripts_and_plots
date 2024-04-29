@@ -181,7 +181,7 @@ def find_previous(distances, grid, current_node):
 
     return best_neighbor
 
-def visualize_paths(grid, start, goal, paths):
+"""def visualize_paths(grid, start, goal, paths):
     num_paths = len(paths)
 
     # Titles for each subplot
@@ -253,11 +253,93 @@ def visualize_paths(grid, start, goal, paths):
     ani = animation.FuncAnimation(fig, animate, frames=len(paths[0]), init_func=init, blit=True, interval=50)
 
     plt.tight_layout()
-    plt.show()
+    plt.show()"""
+
+def visualize_paths(grid, start, goal, paths):
+    num_paths = len(paths)
+
+    # Titles for each subplot
+    titles = ["A* Path", "Dijkstra Path"]
+
+    fig, axes = plt.subplots(1, num_paths, figsize=(12, 6), sharex=True, sharey=True, subplot_kw={'projection': '3d'})
+
+    if not isinstance(axes, (list, np.ndarray)):
+        axes = [axes]
+
+    # Color mapping for terrain
+    color_dict = {
+        0: [154, 205, 50],  # Open space: yellowgreen
+        1: [34, 139, 34],   # Forest: forest green
+        2: [0, 0, 255],     # Water: blue
+        3: [128, 128, 128],  # Mountain: grey
+        4: [205, 133, 63],  # Swamp
+        5: [255, 140, 0],   # Lava
+    }
+
+    # Normalize RGB values
+    for k, v in color_dict.items():
+        color_dict[k] = [x / 255 for x in v]
+
+    # Define terrain types and their corresponding speeds
+    terrain_types = ["Open Space", "Forest", "Water", "Mountain", "Swamp", "Lava"]
+    terrain_colors = [color_dict[i] for i in range(6)]
+    terrain_speeds_str = [f"{terrain_speeds[i]:.2f} km/h" for i in range(6)]
+
+    # Create legend handles for each terrain type with its color
+    legend_handles = [Patch(facecolor=terrain_colors[i], label=f"{terrain_types[i]} ({terrain_speeds_str[i]})") for i in range(6)]
+
+    for ax, path, title in zip(axes, paths, titles):
+        # Plot the terrain in each subplot
+        grid_img = np.zeros((grid.shape[0], grid.shape[1], 3))
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                grid_img[i, j] = color_dict[grid[i, j]]
+
+        x = np.arange(grid.shape[1])
+        y = np.arange(grid.shape[0])
+        X, Y = np.meshgrid(x, y)
+        Z = terrain_heights
+
+        ax.plot_surface(X, Y, Z, rstride=1, cstride=1, facecolors=grid_img, linewidth=0, antialiased=False)
+
+        ax.scatter(start[1], start[0], terrain_heights[start[0], start[1]], marker="o", color="blue", s=80, label="Start")
+        ax.scatter(goal[1], goal[0], terrain_heights[goal[0], goal[1]], marker="s", color="red", s=80, label="Goal")
+        ax.set_title(f"{title}")  # Add title to each subplot
+        ax.set_xlabel("X-axis")
+        ax.set_ylabel("Y-axis")
+        ax.set_zlabel("Z-axis")
+
+        # Add legend with terrain types
+        ax.legend(title="Terrain Types", handles=legend_handles)
+
+    # Initialize the line objects
+    lines = []
+    for ax, path in zip(axes, paths):
+        line, = ax.plot([], [], [], color="lime", linewidth=3)
+        lines.append(line)
+
+    def init():
+        for line in lines:
+            line.set_data([], [])
+        return lines
+
+    def animate(i):
+        for line, path in zip(lines, paths):
+            path_x = [p[1] for p in path[:i]]  # x-coordinates
+            path_y = [p[0] for p in path[:i]]  # y-coordinates
+            path_z = [terrain_heights[p[0], p[1]] for p in path[:i]]  # z-coordinates
+            line.set_data(path_x, path_y)
+            line.set_3d_properties(path_z)
+        return lines
+
+    ani = animation.FuncAnimation(fig, animate, frames=len(paths[0]), init_func=init, blit=True, interval=50, repeat=False)
+
+    plt.tight_layout()
+    plt.show(block=True)
 
 def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_threshold=0.6, max_swamp_distance=12):
     # Define noise parameters
-    octaves = 6
+    octaves = 2
     persistence = 0.5
     lacunarity = 2.0
     scale = 100.0
