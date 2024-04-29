@@ -181,7 +181,7 @@ def find_previous(distances, grid, current_node):
 
     return best_neighbor
 
-"""def visualize_paths(grid, start, goal, paths):
+def visualize_paths(grid, start, goal, paths):
     num_paths = len(paths)
 
     # Titles for each subplot
@@ -253,9 +253,9 @@ def find_previous(distances, grid, current_node):
     ani = animation.FuncAnimation(fig, animate, frames=len(paths[0]), init_func=init, blit=True, interval=50)
 
     plt.tight_layout()
-    plt.show()"""
+    plt.show()
 
-def visualize_paths(grid, start, goal, paths):
+"""def visualize_paths(grid, start, goal, paths):
     num_paths = len(paths)
 
     # Titles for each subplot
@@ -335,7 +335,7 @@ def visualize_paths(grid, start, goal, paths):
     ani = animation.FuncAnimation(fig, animate, frames=len(paths[0]), init_func=init, blit=True, interval=50, repeat=False)
 
     plt.tight_layout()
-    plt.show(block=True)
+    plt.show(block=True)"""
 
 def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_threshold=0.6, max_swamp_distance=12):
     # Define noise parameters
