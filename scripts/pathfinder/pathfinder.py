@@ -255,7 +255,7 @@ def visualize_paths(grid, start, goal, paths):
     plt.tight_layout()
     plt.show()
 
-def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_threshold=0.6, max_swamp_distance=15):
+def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_threshold=0.8, max_swamp_distance=15):
     # Define noise parameters
     octaves = 6
     persistence = 0.5
@@ -295,34 +295,36 @@ def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_thresho
             for nx, ny in neighbors
         )
 
-    # Helper function to propagate swamp within a certain distance from water
-    def propagate_swamp(x, y, visited, max_distance):
-        if (x, y) in visited or not (0 <= x < grid_size[0] and 0 <= y < grid_size[1]):
+    # Helper function to propagate swamp with distance control
+    def propagate_swamp(x, y, visited, distance):
+        if (
+            (x, y) in visited
+            or not (0 <= x < grid_size[0] and 0 <= y < grid_size[1])
+            or distance <= 0
+        ):
             return
 
-        # Propagate only within a limited distance from water
-        if is_near_water(x, y) or max_distance > 0:
-            visited.add((x, y))  # Mark the cell as visited
-            if random.random() < swamp_threshold:
-                terrain_grid[x][y] = 4  # Assign swamp
+        visited.add((x, y))  # Mark the cell as visited
+        if random.random() < swamp_threshold:
+            terrain_grid[x, y] = 4  # Assign swamp
 
-            # Propagate in all four directions with recursion control
-            propagate_swamp(x - 1, y, visited, max_distance - 1)
-            propagate_swamp(x + 1, y, visited, max_distance - 1)
-            propagate_swamp(x, y - 1, visited, max_distance - 1)
-            propagate_swamp(x, y + 1, visited, max_distance - 1)
+        # Propagate in all four directions, decrementing the distance
+        propagate_swamp(x - 1, y, visited, distance - 1)
+        propagate_swamp(x + 1, y, visited, distance - 1)
+        propagate_swamp(x, y - 1, visited, distance - 1)
+        propagate_swamp(x, y + 1, visited, distance - 1)
 
     # Initialize set to track visited cells for swamp propagation
     visited_cells = set()
 
     for i in range(grid_size[0]):
-        for j in range(grid_size[1]):
+        for j in range (grid_size[1]):
             terrain_heights[i, j] = 100 * focused_noise_grid[i, j]
 
             if terrain_heights[i, j] < 20:
                 terrain_grid[i, j] = 2  # Water
-                # Propagate swamps within a certain distance from water sources
-                propagate_swamp(i - 1, j, visited_cells, max_swamp_distance)  # Limit propagation distance
+                # Propagate swamps within a certain distance from water
+                propagate_swamp(i - 1, j, visited_cells, max_swamp_distance)
                 propagate_swamp(i + 1, j, visited_cells, max_swamp_distance)
                 propagate_swamp(i, j - 1, visited_cells, max_swamp_distance)
                 propagate_swamp(i, j + 1, visited_cells, max_swamp_distance)
@@ -336,6 +338,22 @@ def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_thresho
                 terrain_grid[i, j] = 3  # Mountain
             else:
                 terrain_grid[i, j] = 5  # Lava
+
+    # Additional pass to fill gaps and smooth out swamps
+    for i in range(grid_size[0]):
+        for j in range (grid_size[1]):
+            if terrain_grid[i, j] == 4:
+                # Expand swamps to adjacent open spaces to fill gaps
+                neighbors = [
+                    (i - 1, j),
+                    (i + 1, j),
+                    (i, j - 1),
+                    (i, j + 1),
+                ]
+                for nx, ny in neighbors:
+                    if 0 <= nx < grid_size[0] and 0 <= ny < grid_size[1] and terrain_grid[nx][ny] == 0:
+                        if random.random() < swamp_threshold:
+                            terrain_grid[nx][ny] = 4  # Convert open space to swamp
 
     return terrain_grid, terrain_heights
 
