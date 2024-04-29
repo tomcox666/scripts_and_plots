@@ -1,0 +1,48 @@
+{
+  "countries": {
+    "CountryA": {
+      "population": 10000,
+      "beta": 0.3,
+      "gamma": 0.1,
+      "delta": 0.01,
+      "social_distancing": {
+        "no_distancing": 1.0,
+        "with_distancing": 0.5
+      },
+      "description": "Highly developed with strong healthcare and rigid social distancing."
+    },
+    "CountryB": {
+      "population": 20000,
+      "beta": 0.25,
+      "gamma": 0.08,
+      "delta": 0.02,
+      "social_distancing": {
+        "no_distancing": 1.0,
+        "with_distancing": 0.7
+      },
+      "description": "Medium GDP with moderate social distancing compliance."
+    },
+    "CountryC": {
+      "population": 5000,
+      "beta": 0.35,
+      "gamma": 0.12,
+      "delta": 0.015,
+      "social_distancing": {
+        "no_distancing": 1.0,
+        "with_distancing": 0.6
+      },
+      "description": "Developing country with less robust healthcare infrastructure."
+    },
+    "CountryD": {
+      "population": 15000,
+      "beta": 0.28,
+      "gamma": 0.09,
+      "delta": 0.025,
+      "social_distancing": {
+        "no_distancing": 1.0,
+        "with_distancing": 0.4
+      },
+      "description": "Developed country with varying political stances on social distancing."
+    }
+  }
+}
