@@ -339,10 +339,10 @@ def visualize_paths(grid, start, goal, paths):
 
 def create_terrain_grid(grid_size, start, sigma=10, open_radius=3, swamp_threshold=0.6, max_swamp_distance=12):
     # Define noise parameters
-    octaves = 2
-    persistence = 0.5
-    lacunarity = 2.0
-    scale = 100.0
+    octaves = 4
+    persistence = 0.2
+    lacunarity = 4.0
+    scale = 200.0
 
     # Generate Perlin noise and Gaussian gradient
     noise_grid = np.zeros(grid_size)
