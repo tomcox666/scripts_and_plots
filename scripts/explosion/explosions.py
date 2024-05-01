@@ -6,6 +6,7 @@ pygame.init()
 # Sound setup
 pygame.mixer.init()  # Initialize the sound mixer
 explosion_sound = pygame.mixer.Sound('explosion.wav')  # Change 'explosion.wav' to your sound file
+pygame.mixer.set_num_channels(110)
 
 # Set up the screen
 screen_width = 800
@@ -66,7 +67,9 @@ def main():
             colors = [RED, YELLOW, WHITE, ORANGE] 
 
             particle_energy = explosion_energy / num_particles
-            explosion_sound.play()
+            channel = pygame.mixer.find_channel() 
+            if channel:  
+                channel.play(explosion_sound) 
 
             for _ in range(num_particles):
                 color = random.choice(colors)
