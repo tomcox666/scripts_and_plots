@@ -8,13 +8,17 @@ pygame.init()
 screen_width = 800
 screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Particle Explosion Simulation")
+pygame.display.set_caption("Particle Explosion Simulation with Gravity")
 
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
+
+# Constants
+GRAVITY = 0.1  # Adjust for desired gravitational pull
+MASS_THRESHOLD = 3  # Minimum radius for particles to be affected by gravity
 
 # Particle class
 class Particle:
@@ -27,10 +31,16 @@ class Particle:
         self.lifespan = lifespan
         self.dx = random.uniform(-speed, speed)
         self.dy = random.uniform(-speed, speed)
+        self.mass = self.radius * 0.1  # Small mass proportional to size
 
     def update(self):
         self.x += self.dx
         self.y += self.dy
+
+        # Apply gravity if particle is large enough
+        if self.radius >= MASS_THRESHOLD:
+            self.dy += GRAVITY * self.mass  
+
         self.lifespan -= 1
 
         # Fade the particle over time
@@ -54,14 +64,14 @@ def main():
 
         # Create an explosion effect on mouse click
         def create_explosion(pos):
-            explosion_intensity = 30  
-            particle_speed = 2
-            particle_lifespan = 50 
-            colors = [RED, YELLOW, WHITE] 
+            explosion_intensity = 100
+            particle_speed = 5
+            particle_lifespan = 100
+            colors = [RED, YELLOW, WHITE]
 
             for _ in range(explosion_intensity):
                 color = random.choice(colors)
-                radius = random.randint(2, 5) 
+                radius = random.randint(2, 5)
                 particles.append(Particle(pos[0], pos[1], radius, color, particle_speed, particle_lifespan))
 
         # Update and draw particles
