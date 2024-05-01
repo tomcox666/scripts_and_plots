@@ -15,6 +15,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
+ORANGE = (225, 165, 0)
 
 # Constants
 GRAVITY = 0.1  
@@ -59,7 +60,7 @@ def main():
         def create_explosion(pos):
             explosion_energy = 275000  # Total energy of the explosion
             num_particles = 100 
-            colors = [RED, YELLOW, WHITE] 
+            colors = [RED, YELLOW, WHITE, ORANGE] 
 
             particle_energy = explosion_energy / num_particles
 
