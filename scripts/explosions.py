@@ -1,93 +1,81 @@
 import pygame
-from random import randint, uniform
-import math
+import random
 
 # Initialize Pygame
 pygame.init()
 
-# Constants
-SCREEN_WIDTH = 1080
-SCREEN_HEIGHT = 720
+# Set up the screen
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Particle Explosion Simulation")
+
+# Colors
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+YELLOW = (255, 255, 0)
 
-# Screen setup
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Particle Explosion Effect")
-clock = pygame.time.Clock()
-
-# Particle class with added fading and longer lifespan
+# Particle class
 class Particle:
-    def __init__(self, x, y, color, speed, lifespan, angle):
+    def __init__(self, x, y, radius, color, speed, lifespan):
         self.x = x
         self.y = y
-        self.initial_lifespan = lifespan
-        self.lifespan = lifespan
-        self.color = list(color)  # Make color mutable
+        self.radius = radius
+        self.color = color
         self.speed = speed
-        self.radius = 2
-        self.angle = angle
-        self.fade_rate = uniform(0.005, 0.02)  # Random fade rate for each particle
+        self.lifespan = lifespan
+        self.dx = random.uniform(-speed, speed)
+        self.dy = random.uniform(-speed, speed)
 
     def update(self):
-        self.x += self.speed * math.cos(self.angle)
-        self.y += self.speed * math.sin(self.angle)
+        self.x += self.dx
+        self.y += self.dy
         self.lifespan -= 1
-        self.radius -= 0.01
-        self._fade()
 
-    def _fade(self):
-        # Reduce color intensity over time to create a fading effect
-        fade_ratio = self.lifespan / self.initial_lifespan
-        self.color[0] = max(int(self.color[0] * fade_ratio - self.fade_rate), 0)
-        self.color[1] = max(int(self.color[1] * fade_ratio - self.fade_rate), 0)
-        self.color[2] = max(int(self.color[2] * fade_ratio - self.fade_rate), 0)
+        # Fade the particle over time
+        self.color = (self.color[0], self.color[1], self.color[2], int(self.lifespan / 2))
 
     def draw(self, screen):
-        pygame.draw.circle(screen, tuple(self.color), (int(self.x), int(self.y)), int(self.radius))
+        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
-    def is_alive(self):
-        return self.lifespan > 0 and self.radius > 0
-
-
-# Function to create particles
-def create_particles(x, y, intensity):
+# Main simulation loop
+def main():
     particles = []
-    for _ in range(intensity):
-        angle = uniform(0, 2 * math.pi)
-        speed = uniform(1, 5)
-        lifespan = randint(500, 1000)  # Longer lifespan for particles
-        color = (randint(128, 255), randint(128, 255), randint(128, 255))
-        p = Particle(x, y, color, speed, lifespan, angle)
-        particles.append(p)
-    return particles 
+    clock = pygame.time.Clock()
+    running = True
 
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                create_explosion(pygame.mouse.get_pos())
 
-# Create a list to hold all active particles
-all_particles = []
+        # Create an explosion effect on mouse click
+        def create_explosion(pos):
+            explosion_intensity = 30  
+            particle_speed = 2
+            particle_lifespan = 50 
+            colors = [RED, YELLOW, WHITE] 
 
-# Game loop with persistent particles and rapid click response
-running = True
-while running:
-    # Process events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            # Create new particles and add them to the list
-            new_particles = create_particles(mouse_x, mouse_y, 80)
-            all_particles.extend(new_particles)
+            for _ in range(explosion_intensity):
+                color = random.choice(colors)
+                radius = random.randint(2, 5) 
+                particles.append(Particle(pos[0], pos[1], radius, color, particle_speed, particle_lifespan))
 
-    # Clear the screen
-    screen.fill(BLACK)
+        # Update and draw particles
+        screen.fill(BLACK)
+        for particle in particles[:]:  # Work on a copy to avoid mutation issues
+            particle.update()
+            particle.draw(screen)
+            if particle.lifespan <= 0:
+                particles.remove(particle)
 
-    # Update and draw all active particles
-    all_particles = [p for p in all_particles if p.is_alive()]  # Keep only alive particles
-    for particle in all_particles:
-        particle.update()
-        particle.draw(screen)
+        pygame.display.flip()
+        clock.tick(60)  # Limit to 60 FPS
 
-    pygame.display.flip()
-    clock.tick(60)
+    pygame.quit()
 
-pygame.quit()
+if __name__ == "__main__":
+    main()
