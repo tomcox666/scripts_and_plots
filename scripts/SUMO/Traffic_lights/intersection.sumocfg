@@ -1,0 +1,10 @@
+<configuration>
+    <input>
+        <net-file value="intersection.net.xml"/>  <!-- Network definition -->
+        <route-files value="intersection.rou.xml"/>  <!-- Route definition -->
+    </input>
+    <time>
+        <begin value="0"/>  <!-- Simulation start time -->
+        <end value="1000"/>  <!-- Simulation end time -->
+    </time>
+</configuration>

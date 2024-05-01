@@ -1,0 +1,12 @@
+<net>
+    <!-- Correct junction definition -->
+    <junction id="j1" type="priority" x="0" y="0"/>  <!-- Priority junction with coordinates -->
+
+    <!-- Define edges -->
+    <edge id="north_south" from="j1" to="j1" length="1000" numLanes="1"/>  <!-- One lane, loop edge -->
+    <edge id="east_west" from="j1" to="j1" length="1000" numLanes="1"/>  <!-- One lane, loop edge -->
+
+    <!-- Define proper connections -->
+    <connection from="north_south" fromLane="0" to="east_west" toLane="0" dir="s"/>  <!-- Southbound direction -->
+    <connection from="east_west" fromLane="0" to="north_south" toLane="0" dir="e"/>  <!-- Eastbound direction -->
+</net>

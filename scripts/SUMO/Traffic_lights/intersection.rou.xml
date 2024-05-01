@@ -1,0 +1,12 @@
+<routes>
+    <!-- Define vehicle types -->
+    <vType id="car" accel="1.0" decel="1.0" maxSpeed="30.0" length="5.0"/>
+
+    <!-- Define routes -->
+    <route id="north_south_route" edges="north_south"/>  <!-- North-South route -->
+    <route id="east_west_route" edges="east_west"/>  <!-- East-West route -->
+
+    <!-- Define vehicles with routes -->
+    <vehicle id="car1" type="car" route="north_south_route" depart="0"/>  <!-- Vehicle departing north-south -->
+    <vehicle id="car2" type="car" route="east_west_route" depart="10"/>  <!-- Vehicle departing east-west -->
+</routes>
