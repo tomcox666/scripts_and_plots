@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<canvas id="canvas" width="600" height="400"></canvas>
+<br>
+Initial Velocity (m/s): <input type="number" id="velocity" value="20">
+<br>
+Launch Angle (degrees): <input type="number" id="angle" value="45">
+<br>
+Canvas Width: <input type="number" id="canvasWidth" value="600">
+<br>
+Canvas Height: <input type="number" id="canvasHeight" value="400">
+<br>
+Background Color: <input type="color" id="backgroundColor" value="#e0f0ff">
+<br>
+<button onclick="updateConfiguration()">Apply Settings</button>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// Define constants
+const g = 9.81; // Gravitational acceleration (m/s^2)
+
+function updateConfiguration() {
+  // Update canvas size
+  canvas.width = parseInt(document.getElementById("canvasWidth").value);
+  canvas.height = parseInt(document.getElementById("canvasHeight").value);
+
+  // Update background color
+  canvas.style.backgroundColor = document.getElementById("backgroundColor").value;
+
+  updateAndDraw(); // Redraw with new settings
+}
+
+let isDragging = false;
+let lastX, lastY;
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  let x = e.clientX - rect.left;
+  let y = e.clientY - rect.top;
+
+  // Check if click was near the projectile
+  const distFromProjectile = Math.sqrt(Math.pow(x - lastX, 2) + Math.pow(y - lastY, 2));
+  if (distFromProjectile <= 10) { 
+    isDragging = true;
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (isDragging) {
+    const rect = canvas.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+
+    // Calculate new angle based on mouse position
+    const dx = x - lastX;
+    const dy = lastY - y; 
+    let newAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+    document.getElementById("angle").value = newAngle.toFixed(1);
+
+    updateAndDraw();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  isDragging = false;
+});
+
+// Obstacle Feature
+const obstacle = {
+  x: 300,
+  y: 200,
+  width: 50,
+  height: 100
+}
+
+function updateAndDraw() {
+  const velocity = parseFloat(document.getElementById("velocity").value);
+  const angle = parseFloat(document.getElementById("angle").value) * Math.PI / 180; // Convert to radians
+  
+  // Calculate initial components
+  const vx = velocity * Math.cos(angle);
+  const vy = velocity * Math.sin(angle);
+
+  let x = 0;
+  let y = 0;
+  let t = 0;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+  // Simulate trajectory
+  while (y >= 0) {
+    x = vx * t;
+    y = vy * t - 0.5 * g * t * t;
+    t += 0.1; // Update time step
+
+        // Collision detection with obstacle
+    if (x >= obstacle.x && x <= obstacle.x + obstacle.width &&
+        y >= obstacle.y && y <= obstacle.y + obstacle.height) {
+      // Handle collision here (stop drawing, etc.)
+      ctx.fillText("Collision!", obstacle.x + obstacle.width/2 - 20, obstacle.y + obstacle.height/2);
+      return; 
+    }
+
+    // Draw the projectile
+    ctx.beginPath();
+    ctx.arc(x, canvas.height - y, 2, 0, 2 * Math.PI); // Draw a circle for projectile
+    ctx.fillStyle = "red";
+    ctx.fill();
+  }
+}
+
+updateAndDraw();
+</script>
