@@ -4,9 +4,10 @@ canvas.width = window.innerWidth * 0.8;
 canvas.height = window.innerHeight;
 
 // Variables for simulation
-let gravity = 0.08;
+let explosionEnergy = 275000;
 let density = 1;
 let explosionType = 1;
+let gravity = 0.08;
 
 // Item class representing a damageable object
 class Item {
@@ -33,11 +34,6 @@ function addItem(x) {
 }
 
 // Event listeners for GUI changes
-document.getElementById('gravity-slider').addEventListener('input', (e) => {
-    gravity = parseFloat(e.target.value);
-    document.getElementById('gravity-value').innerText = gravity.toFixed(2);
-});
-
 document.getElementById('density-slider').addEventListener('input', (e) => {
     density = parseFloat(e.target.value);
     document.getElementById('density-value').innerText = density.toFixed(1);
@@ -45,6 +41,11 @@ document.getElementById('density-slider').addEventListener('input', (e) => {
 
 document.getElementById('explosion-type').addEventListener('change', (e) => {
     explosionType = parseInt(e.target.value, 10);
+});
+
+document.getElementById('explosion-energy-slider').addEventListener('input', (e) => {
+    explosionEnergy = parseInt(e.target.value, 10);
+    document.getElementById('explosion-energy-value').innerText = explosionEnergy;
 });
 
 document.getElementById('item-position').addEventListener('input', (e) => {
@@ -58,15 +59,14 @@ document.getElementById('add-item').addEventListener('click', () => {
     document.getElementById('item-hp').innerText = item.hp; // Reset HP
 });
 
-// Function to calculate damage based on explosion type and distance
 function calculateDamage(explosionPos, itemPos, type) {
     const distance = Math.abs(explosionPos.x - itemPos.x);
     let damage;
     
     if (type === 1) { // Explosion type 1
-        damage = Math.max(0, 100 - (distance / 10)); // Simple linear reduction with distance
+        damage = Math.max(0, (explosionEnergy / 10000) * (100 - (distance / 10))); // Scale damage based on explosion energy
     } else { // Explosion type 2
-        damage = Math.max(0, 200 - (distance / 5)); // Higher initial damage, but falls off faster
+        damage = Math.max(0, (explosionEnergy / 10000) * (200 - (distance / 5))); // Scale damage based on explosion energy
     }
     
     return damage;
@@ -106,7 +106,6 @@ let particles = [];
 
 // Create explosion with sound and particles
 function createExplosion(pos, soundFile, colors, volume) {
-    const explosionEnergy = 275000;
     const numParticles = 100;
     const particleEnergy = explosionEnergy / numParticles;
   
