@@ -105,12 +105,13 @@ class Particle {
 let particles = [];
 
 // Create explosion with sound and particles
-function createExplosion(pos, soundFile, colors) {
+function createExplosion(pos, soundFile, colors, volume) {
     const explosionEnergy = 275000;
     const numParticles = 100;
     const particleEnergy = explosionEnergy / numParticles;
   
     const sound = new Audio(soundFile);
+    sound.volume = volume; // Set the volume here
     sound.play();
   
     for (let i = 0; i < numParticles; i++) {
@@ -161,7 +162,19 @@ canvas.addEventListener('mousedown', (event) => {
     }
     
     if (event.button === 0) {
-        createExplosion({ x: event.clientX, y: event.clientY }, soundFile, colors);
+        const volume = parseFloat(document.getElementById('volume-slider').value);
+        createExplosion({ x: event.clientX, y: event.clientY }, soundFile, colors, volume);
+    }
+});
+
+document.getElementById('volume-slider').addEventListener('input', (e) => {
+    const volume = parseFloat(e.target.value);
+    document.getElementById('volume-value').innerText = volume.toFixed(2);
+    
+    // Update the volume of all audio elements
+    const audioElements = document.querySelectorAll('audio');
+    for (const audio of audioElements) {
+        audio.volume = volume;
     }
 });
 
