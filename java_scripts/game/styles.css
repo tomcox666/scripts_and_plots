@@ -1,0 +1,42 @@
+/* styles.css */
+
+.game-board {
+    width: 640px;
+    height: 480px;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 auto;
+}
+
+.card {
+    width: calc(20% - 10px);
+    height: calc(20% - 10px);
+    margin: 5px;
+    background-color: #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.6s; /* add transition effect */
+    transform-style: preserve-3d; /* add 3D effect */
+}
+
+.card.flipped {
+    transform: rotateY(180deg); /* add rotation effect */
+}
+
+.flip-animation {
+    animation: flip 0.6s; /* add animation effect */
+}
+
+@keyframes flip {
+    0% {
+        transform: rotateY(0deg);
+    }
+    100% {
+        transform: rotateY(180deg);
+    }
+}
+
+.card.matched {
+    background-color: #0f0;
+    cursor: default;
+}

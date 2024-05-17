@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="chart" width="400" height="200"></canvas>
+
+    <select id="graph-type">
+        <option value="bar">Bar Chart</option>
+        <option value="line">Line Chart</option>
+        <option value="pie">Pie Chart</option>
+    </select>
+
+    <div id="data-selectors"></div>
+
+    <input type="file" id="file-input" accept=".csv, .json" />
+    <button id="load-file-btn">Load File</button>
+
+    <script>
+        let chart;
+
+        const graphTypeSelect = document.getElementById('graph-type');
+        const dataSelectorsDiv = document.getElementById('data-selectors');
+        const fileInput = document.getElementById('file-input');
+        const loadFileBtn = document.getElementById('load-file-btn');
+
+        loadFileBtn.addEventListener('click', () => {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = () => {
+                    const fileData = reader.result;
+                    const rows = fileData.split('\n');
+                    const labels = rows[0].split('\t'); // Assuming tab-separated values
+                    const data = [];
+
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i].split('\t');
+                        data.push(row);
+                    }
+
+                    createDataSelectors(labels);
+                    createChart(graphTypeSelect.value, labels, data);
+                };
+
+                reader.readAsText(file);
+            }
+        });
+
+        graphTypeSelect.addEventListener('change', () => {
+            if (chart) {
+                chart.destroy();
+            }
+
+            const selectedLabels = getSelectedLabels();
+            const selectedData = getSelectedData(data);
+
+            createChart(graphTypeSelect.value, selectedLabels, selectedData);
+        });
+
+        function createDataSelectors(data) {
+            const columnNames = data[0];
+            const dataSelectorsDiv = document.getElementById('data-selectors');
+
+            columnNames.forEach((columnName, index) => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `checkbox-${index}`;
+                checkbox.checked = true;
+
+                const labelElement = document.createElement('label');
+                labelElement.htmlFor = `checkbox-${index}`;
+                labelElement.textContent = columnName;
+
+                dataSelectorsDiv.appendChild(checkbox);
+                dataSelectorsDiv.appendChild(labelElement);
+            });
+        }
+
+        function getSelectedColumns() {
+            const selectedColumns = [];
+            const columnNames = data[0];
+
+            columnNames.forEach((columnName, index) => {
+                const checkbox = document.getElementById(`checkbox-${index}`);
+
+                if (checkbox.checked) {
+                    selectedColumns.push(columnName);
+                }
+            });
+
+            return selectedColumns;
+        }
+
+        function createChart(type, data) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            const selectedColumns = getSelectedColumns();
+
+            // Validate selected columns based on chart type
+            if (type === 'bar' && selectedColumns.length !== 2) {
+                alert('Please select exactly 2 columns for bar chart');
+                return;
+            }
+
+            const datasets = selectedColumns.map((columnName, index) => {
+                return {
+                    label: columnName,
+                    data: data.slice(1).map(row => parseFloat(row[index])),
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                };
+            });
+
+            chart = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: data.slice(1).map(row => row[0]),
+                    datasets: datasets
+                },
+                options: {
+                    plugins: {
+                        tooltip: {
+                            enabled: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
