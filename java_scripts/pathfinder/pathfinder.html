@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Terrain Pathfinding</title>
+    <style>
+        /* Add some basic styling to our page */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <!-- Create a canvas element to render our terrain and paths -->
+    <canvas id="terrain-canvas" width="600" height="300"></canvas>
+
+    <!-- Include the necessary JavaScript libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
+
+    <script>
+        // Define the Node class for pathfinding algorithms
+        class Node {
+            constructor(position, g = 0, h = 0, parent = null) {
+                this.position = position;
+                this.g = g; // Cost from start to this node
+                this.h = h; // Heuristic cost from this node to goal
+                this.f = g + h; // Total cost
+                this.parent = parent; // Parent node to trace back the path
+            }
+        }
+
+        // Define the terrain costs and speeds
+        const terrainCosts = {
+            0: 1, // Open space
+            1: 10, // Forest
+            2: 50, // Water
+            3: 80, // Mountain (faster than before)
+            4: 5, // Swamp
+            5: 150, // Lava
+        };
+
+        const terrainSpeeds = {
+            0: 5, // Open space
+            1: 4.5, // Forest (50% slower than open space)
+            2: 1, // Water (20% of open space speed)
+            3: 4, // Mountain (slightly faster when flat)
+            4: 2.25, // Swamp (25% slower than open space)
+            5: 0.01, // Lava (2% of open space speed)
+        };
+
+        // Define the gradient multiplier
+        const gradientMultiplier = 0.8;
+
+        // Function to calculate the path time
+        function calculatePathTime(path, grid, terrainHeights) {
+            let totalTime = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                const currentPosition = path[i];
+                const nextPosition = path[i + 1];
+                const terrainType = grid[nextPosition[0]][nextPosition[1]];
+                const heightDiff = Math.abs(terrainHeights[nextPosition[0]][nextPosition[1]] - terrainHeights[currentPosition[0]][currentPosition[1]]);
+                const distance = Math.sqrt(Math.pow(nextPosition[0] - currentPosition[0], 2) + Math.pow(nextPosition[1] - currentPosition[1], 2));
+                const speed = terrainSpeeds[terrainType] * (1 - heightDiff / 100) * gradientMultiplier;
+                const time = distance / speed;
+                totalTime += time;
+            }
+            return totalTime;
+        }
+
+        // A* heuristic function
+        function heuristic(a, b) {
+            return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]); // Manhattan distance
+        }
+
+        // A* Algorithm implementation
+        function astar(grid, start, goal) {
+            console.log("A* algorithm started");
+            const openList = [];
+            const closedList = new Set();
+
+            const startNode = new Node(start);
+            const goalNode = new Node(goal);
+
+            openList.push(startNode);
+
+            while (openList.length > 0) {
+                const currentNode = openList.shift();
+
+                closedList.add(currentNode.position);
+
+                if (currentNode.position === goalNode.position) {
+                    console.log("A* algorithm found goal");
+                    const path = [];
+                    while (currentNode) {
+                        path.push(currentNode.position);
+                        currentNode = currentNode.parent;
+                    }
+                    return path.reverse(); // Reverse to get the correct order
+                }
+
+                const neighbors = [
+                    [currentNode.position[0] - 1, currentNode.position[1]],
+                    [currentNode.position[0] + 1, currentNode.position[1]],
+                    [currentNode.position[0], currentNode.position[1] - 1],
+                    [currentNode.position[0], currentNode.position[1] + 1],
+                ];
+
+                for (const neighbor of neighbors) {
+                    if (
+                        neighbor[0] >= 0 &&
+                        neighbor[0] < grid.length &&
+                        neighbor[1] >= 0 &&
+                        neighbor[1] < grid[0].length &&
+                        !closedList.has(neighbor)
+                    ) {
+                        const terrainCost = terrainCosts[grid[neighbor[0]][neighbor[1]]];
+                        const newG = currentNode.g + terrainCost;
+
+                        // Penalty based on terrain 'danger' (avoids costly terrain types)
+                        if (terrainCost >= 50) {
+                            const h = heuristic(neighbor, goalNode.position) * 1.5; // Inflate heuristic
+                        } else {
+                            const h = heuristic(neighbor, goalNode.position);
+                        }
+
+                        const newNode = new Node(neighbor, newG, h, currentNode);
+
+                        let alreadyInOpenList = false;
+                        for (const openNode of openList) {
+                            if (
+                                openNode.position === newNode.position &&
+                                openNode.f <= newNode.f
+                            ) {
+                                alreadyInOpenList = true;
+                                break;
+                            }
+                        }
+                        if (!alreadyInOpenList) {
+                            openList.push(newNode);
+                        }
+                    }
+                }
+            }
+
+            console.log("A* algorithm failed to find goal");
+            return null; // If no valid path is found
+        }
+
+        // Dijkstra's Algorithm implementation
+        function dijkstra(grid, start, goal) {
+            console.log("Dijkstra's algorithm started");
+            const distances = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
+            distances[start[0]][start[1]] = 0;
+
+            const pq = [[0, start]]; // Priority queue with (distance, position) pairs
+
+            while (pq.length > 0) {
+                const [currentDistance, currentNode] = pq.shift();
+
+                if (currentNode === goal) {
+                    console.log("Dijkstra's algorithm found goal");
+                    // Backtrace to find the path
+                    const path = [];
+                    while (currentNode) {
+                        path.push(currentNode);
+                        currentNode = findPrevious(distances, grid, currentNode);
+                    }
+                    return path.reverse(); // Reverse to get the correct order
+                }
+
+                const neighbors = [
+                    [currentNode[0] - 1, currentNode[1]],
+                    [currentNode[0] + 1, currentNode[1]],
+                    [currentNode[0], currentNode[1] - 1],
+                    [currentNode[0], currentNode[1] + 1],
+                ];
+
+                for (const neighbor of neighbors) {
+                    if (
+                        neighbor[0] >= 0 &&
+                        neighbor[0] < grid.length &&
+                        neighbor[1] >= 0 &&
+                        neighbor[1] < grid[0].length &&
+                        distances[neighbor[0]][neighbor[1]] > currentDistance + terrainCosts[grid[neighbor[0]][neighbor[1]]]
+                    ) {
+                        const terrainCost = terrainCosts[grid[neighbor[0]][neighbor[1]]];
+                        const newDistance = currentDistance + terrainCost;
+
+                        if (newDistance < distances[neighbor[0]][neighbor[1]]) {
+                            distances[neighbor[0]][neighbor[1]] = newDistance;
+                            pq.push([newDistance, neighbor]);
+                        }
+                    }
+                }
+            }
+
+            console.log("Dijkstra's algorithm failed to find goal");
+            return null; // If no valid path is found
+        }
+
+        // Helper function to backtrack the path in Dijkstra's
+        function findPrevious(distances, grid, currentNode) {
+            const neighbors = [
+                [currentNode[0] - 1, currentNode[1]],
+                [currentNode[0] + 1, currentNode[1]],
+                [currentNode[0], currentNode[1] - 1],
+                [currentNode[0], currentNode[1] + 1],
+            ];
+
+            let bestNeighbor = null;
+            for (const neighbor of neighbors) {
+                if (
+                    neighbor[0] >= 0 &&
+                    neighbor[0] < grid.length &&
+                    neighbor[1] >= 0 &&
+                    neighbor[1] < grid[0].length &&
+                    distances[neighbor[0]][neighbor[1]] < distances[currentNode[0]][currentNode[1]]
+                ) {
+                    if (bestNeighbor === null || distances[neighbor[0]][neighbor[1]] < distances[bestNeighbor[0]][bestNeighbor[1]]) {
+                        bestNeighbor = neighbor;
+                    }
+                }
+            }
+
+            return bestNeighbor;
+        }
+
+        // Function to create the terrain grid
+        function createTerrainGrid(gridSize, start, sigma = 10, openRadius = 3, swampThreshold = 0.6, maxSwampDistance = 12) {
+            console.log("Creating terrain grid");
+            // Define noise parameters
+            const octaves = 4;
+            const persistence = 0.2;
+            const lacunarity = 4.0;
+            const scale = 200.0;
+
+            // Generate Perlin noise and Gaussian gradient
+            const noiseGrid = Array(gridSize[0]).fill().map(() => Array(gridSize[1]).fill(0));
+            const gaussianGrid = Array(gridSize[0]).fill().map(() => Array(gridSize[1]).fill(0));
+            const simplex = new SimplexNoise();
+
+            for (let i = 0; i < gridSize[0]; i++) {
+                for (let j = 0; j < gridSize[1]; j++) {
+                    noiseGrid[i][j] = simplexNoise(i / scale, j / scale, octaves, persistence, lacunarity);
+                    const distance = Math.sqrt(Math.pow(i - start[0], 2) + Math.pow(j - start[1], 2));
+                    gaussianGrid[i][j] = Math.exp(-(distance ** 2) / (2 * sigma ** 2));
+                }
+            }
+
+            // Blend Perlin noise with Gaussian gradient to focus open terrain near start
+            const focusedNoiseGrid = noiseGrid.map((row, i) => row.map((value, j) => value * (1 - gaussianGrid[i][j])));
+
+            // Normalize the blended noise values to the range [0, 1]
+            const minNoiseValue = Math.min(...focusedNoiseGrid.flat());
+            const maxNoiseValue = Math.max(...focusedNoiseGrid.flat());
+            const normalizedNoiseGrid = focusedNoiseGrid.map((row) => row.map((value) => (value - minNoiseValue) / (maxNoiseValue - minNoiseValue)));
+
+            // Convert noise values to terrain types and heights
+            const terrainGrid = Array(gridSize[0]).fill().map(() => Array(gridSize[1]).fill(0));
+            const terrainHeights = Array(gridSize[0]).fill().map(() => Array(gridSize[1]).fill(0));
+
+            // Helper function to check if a cell is near water
+            function isNearWater(x, y) {
+                const neighbors = [
+                    [x - 1, y],
+                    [x + 1, y],
+                    [x, y - 1],
+                    [x, y + 1],
+                ];
+                return neighbors.some(([nx, ny]) => nx >= 0 && nx < gridSize[0] && ny >= 0 && ny < gridSize[1] && terrainGrid[nx][ny] === 2);
+            }
+
+            // Helper function to propagate swamp with distance control
+            function propagateSwamp(x, y, visited, distance) {
+                if ((x, y) in visited || x < 0 || x >= gridSize[0] || y < 0 || y >= gridSize[1] || distance <= 0) {
+                    return;
+                }
+
+                visited.add([x, y]); // Mark the cell as visited
+                if (Math.random() < swampThreshold) {
+                    terrainGrid[x][y] = 4; // Assign swamp
+                }
+
+                // Propagate in all four directions, decrementing the distance
+                propagateSwamp(x - 1, y, visited, distance - 1);
+                propagateSwamp(x + 1, y, visited, distance - 1);
+                propagateSwamp(x, y - 1, visited, distance - 1);
+                propagateSwamp(x, y + 1, visited, distance - 1);
+            }
+
+            // Initialize set to track visited cells for swamp propagation
+            const visitedCells = new Set();
+
+            for (let i = 0; i < gridSize[0]; i++) {
+                for (let j = 0; j < gridSize[1]; j++) {
+                    terrainHeights[i][j] = 100 * normalizedNoiseGrid[i][j];
+
+                    if (terrainHeights[i][j] < 20) {
+                        terrainGrid[i][j] = 2; // Water
+                        // Propagate swamps within a certain distance from water
+                        propagateSwamp(i - 1, j, visitedCells, maxSwampDistance);
+            propagateSwamp(i + 1, j, visitedCells, maxSwampDistance);
+                        propagateSwamp(i, j - 1, visitedCells, maxSwampDistance);
+                        propagateSwamp(i, j + 1, visitedCells, maxSwampDistance);
+                    } else if (isNearWater(i, j) && Math.random() < swampThreshold) {
+                        terrainGrid[i][j] = 4; // Swamp
+                    } else if (terrainHeights[i][j] < 55) {
+                        terrainGrid[i][j] = 0; // Open space
+                    } else if (terrainHeights[i][j] < 80) {
+                        terrainGrid[i][j] = 1; // Forest
+                    } else if (terrainHeights[i][j] < 95) {
+                        terrainGrid[i][j] = 3; // Mountain
+                    } else {
+                        terrainGrid[i][j] = 5; // Lava
+                    }
+                }
+            }
+
+            // Additional pass to fill gaps and smooth out swamps
+            for (let i = 0; i < gridSize[0]; i++) {
+                for (let j = 0; j < gridSize[1]; j++) {
+                    if (terrainGrid[i][j] === 4) {
+                        // Expand swamps to adjacent open spaces to fill gaps
+                        const neighbors = [
+                            [i - 1, j],
+                            [i + 1, j],
+                            [i, j - 1],
+                            [i, j + 1],
+                        ];
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < gridSize[0] && ny >= 0 && ny < gridSize[1] && terrainGrid[nx][ny] === 0) {
+                                if (Math.random() < swampThreshold) {
+                                    terrainGrid[nx][ny] = 4; // Convert open space to swamp
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            console.log("Terrain grid created");
+            return [terrainGrid, terrainHeights];
+        }
+
+        // Main function to visualize the terrain and paths
+        function visualizePaths(grid, start, goal, paths) {
+            console.log("Visualizing paths");
+            const numPaths = paths.length;
+
+            // Titles for each subplot
+            const titles = ["A* Path", "Dijkstra Path"];
+
+            // Color mapping for terrain
+            const colorDict = {
+                0: [154, 205, 50], // Open space: yellowgreen
+                1: [34, 139, 34], // Forest: forest green
+                2: [0, 0, 255], // Water: blue
+                3: [128, 128, 128], // Mountain: grey
+                4: [205, 133, 63], // Swamp
+                5: [255, 140, 0], // Lava
+            };
+
+            // Normalize RGB values
+            for (const [key, value] of Object.entries(colorDict)) {
+                colorDict[key] = value.map((x) => x / 255);
+            }
+
+            // Define terrain types and their corresponding speeds
+            const terrainTypes = ["Open Space", "Forest", "Water", "Mountain", "Swamp", "Lava"];
+            const terrainColors = Object.values(colorDict);
+            const terrainSpeedsStr = Object.values(terrainSpeeds).map((speed) => `${speed.toFixed(2)} km/h`);
+
+            // Create legend handles for each terrain type with its color
+            const legendHandles = terrainTypes.map((type, index) => ({
+                label: `${type} (${terrainSpeedsStr[index]})`,
+                color: terrainColors[index],
+            }));
+
+            // Get the canvas element
+            const canvas = document.getElementById("terrain-canvas");
+            const ctx = canvas.getContext("2d");
+
+            // Set the canvas dimensions
+            canvas.width = 600;
+            canvas.height = 300;
+
+            // Draw the terrain grid
+            for (let i = 0; i < grid.length; i++) {
+                for (let j = 0; j < grid[0].length; j++) {
+                    const terrainType = grid[i][j];
+                    const color = colorDict[terrainType];
+                    ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+                    ctx.fillRect(j * 2, i * 2, 2, 2);
+                }
+            }
+
+            // Draw the start and goal positions
+            ctx.fillStyle = "blue";
+            ctx.fillRect(start[1] * 2, start[0] * 2, 2, 2);
+            ctx.fillStyle = "red";
+            ctx.fillRect(goal[1] * 2, goal[0] * 2, 2, 2);
+
+            // Draw the paths
+            for (const path of paths) {
+                ctx.beginPath();
+                ctx.strokeStyle = "lime";
+                ctx.lineWidth = 3;
+                for (const [x, y] of path) {
+                    ctx.lineTo(y * 2, x * 2);
+                }
+                ctx.stroke();
+            }
+
+            // Add legend with terrain types
+            const legendX = 10;
+            const legendY = 10;
+            const legendWidth = 150;
+            const legendHeight = 20 * terrainTypes.length;
+            ctx.fillStyle = "white";
+            ctx.fillRect(legendX, legendY, legendWidth, legendHeight);
+            ctx.font = "14px Arial";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            for (const [index, handle] of legendHandles.entries()) {
+                ctx.fillStyle = handle.color;
+                ctx.fillRect(legendX + 10, legendY + 20 * index, 10, 10);
+                ctx.fillStyle = "black";
+                ctx.fillText(handle.label, legendX + 25, legendY + 20 * index);
+            }
+        }
+
+        // Use the terrain grid instead of the random grid
+        const gridSize = [300, 300];
+
+        // Start and goal positions
+        const start = [10, 10];
+        const goal = [250, 220];
+
+        const [grid, terrainHeights] = createTerrainGrid(gridSize, start);
+
+        // Find paths with different algorithms
+        const astarPath = astar(grid, start, goal);
+        const dijkstraPath = dijkstra(grid, start, goal);
+
+        // Calculate path times
+        const astarTime = calculatePathTime(astarPath, grid, terrainHeights);
+        const dijkstraTime = calculatePathTime(dijkstraPath, grid, terrainHeights);
+
+        console.log(`A* algorithm time: ${astarTime.toFixed(2)} hours`);
+        console.log(`Dijkstra's algorithm time: ${dijkstraTime.toFixed(2)} hours`);
+
+        // Create the list of paths
+        const paths = [astarPath, dijkstraPath];
+
+        // Visualize each path in its own subplot
+        visualizePaths(grid, start, goal, paths);
+    </script>
+</body>
+</html>
