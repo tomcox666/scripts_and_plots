@@ -83,8 +83,31 @@
             <span id="volume-value">0.5</span>
         </div>
 
+        <!-- New controls for item size and type -->
+        <div class="control-group">
+            <label for="item-size-slider">Item Size: </label>
+            <input type="range" id="item-size-slider" min="10" max="100" step="1" value="50">
+            <span id="item-size-value">50</span>
+        </div>
+
+        <div class="control-group">
+            <label for="item-type-select">Item Type: </label>
+            <select id="item-type-select">
+                <option value="type-1">Type 1</option>
+                <option value="type-2">Type 2</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <button id="reset-button">Reset Item</button>
+        </div>
+
+        <div class="control-group">
+            <label for="item-color-picker">Item Color: </label>
+            <input type="color" id="item-color-picker" value="#00FF00">
+        </div>
     </div>
-    
+
     <script src="explosions.js"></script>
 </body>
 </html>

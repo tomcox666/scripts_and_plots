@@ -9,70 +9,10 @@ let density = 1;
 let explosionType = 1;
 let gravity = 0.08;
 
-// Item class representing a damageable object
-class Item {
-    constructor(x, y, hp = 100, width = 50, height = 50) {
-        this.x = x;
-        this.y = y;
-        this.hp = hp;
-        this.width = width;
-        this.height = height;
-    }
-    
-    draw() {
-        ctx.fillStyle = this.hp > 0 ? "green" : "red"; // Change color based on HP
-        ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-    }
-}
+// Define global array for particles
+let particles = [];
 
-// Global variable for item
-let item;
-
-// Add item to the canvas
-function addItem(x) {
-    item = new Item(x * canvas.width / 100, canvas.height / 2); // Place it along the x-axis
-}
-
-// Event listeners for GUI changes
-document.getElementById('density-slider').addEventListener('input', (e) => {
-    density = parseFloat(e.target.value);
-    document.getElementById('density-value').innerText = density.toFixed(1);
-});
-
-document.getElementById('explosion-type').addEventListener('change', (e) => {
-    explosionType = parseInt(e.target.value, 10);
-});
-
-document.getElementById('explosion-energy-slider').addEventListener('input', (e) => {
-    explosionEnergy = parseInt(e.target.value, 10);
-    document.getElementById('explosion-energy-value').innerText = explosionEnergy;
-});
-
-document.getElementById('item-position').addEventListener('input', (e) => {
-    const position = parseInt(e.target.value, 10);
-    document.getElementById('item-position-value').innerText = position;
-});
-
-document.getElementById('add-item').addEventListener('click', () => {
-    const position = parseInt(document.getElementById('item-position').value, 10);
-    addItem(position);
-    document.getElementById('item-hp').innerText = item.hp; // Reset HP
-});
-
-function calculateDamage(explosionPos, itemPos, type) {
-    const distance = Math.abs(explosionPos.x - itemPos.x);
-    let damage;
-    
-    if (type === 1) { // Explosion type 1
-        damage = Math.max(0, (explosionEnergy / 10000) * (100 - (distance / 10))); // Scale damage based on explosion energy
-    } else { // Explosion type 2
-        damage = Math.max(0, (explosionEnergy / 10000) * (200 - (distance / 5))); // Scale damage based on explosion energy
-    }
-    
-    return damage;
-}
-
-// Particle class for explosions
+// Particle class for creating explosion effects
 class Particle {
     constructor(x, y, radius, color, energy) {
         this.x = x;
@@ -102,24 +42,120 @@ class Particle {
     }
 }
 
-let particles = [];
+// Item class with a health bar for visual representation
+class Item {
+    constructor(x, y, hp = 100, width = 50, height = 50) {
+        this.x = x;
+        this.y = y;
+        this.hp = hp;
+        this.width = width;
+        this.height = height;
+    }
 
-// Create explosion with sound and particles
+    draw() {
+        ctx.fillStyle = this.color; // Use the item's color
+        ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+
+        // Draw a health bar
+        const healthBarWidth = 50;
+        const healthBarHeight = 10;
+        ctx.fillStyle = "white";
+        ctx.fillRect(
+            this.x - healthBarWidth / 2,
+            this.y - this.height / 2 - healthBarHeight,
+            healthBarWidth,
+            healthBarHeight
+        );
+        ctx.fillStyle = "red";
+        ctx.fillRect(
+            this.x - healthBarWidth / 2,
+            this.y - this.height / 2 - healthBarHeight,
+            healthBarWidth * (this.hp / 100),
+            healthBarHeight
+        );
+    }
+}
+
+// Function to calculate damage based on explosion type
+function calculateDamage(explosionPos, itemPos, type) {
+    const distance = Math.abs(explosionPos.x - itemPos.x);
+    let damage;
+
+    if (type === 1) {
+        damage = Math.max(0, (explosionEnergy / 10000) * (100 - (distance / 10)));
+    } else {
+        damage = Math.max(0, (explosionEnergy / 10000) * (200 - (distance / 5)));
+    }
+
+    return damage;
+}
+
+// Global variable for item
+let item;
+
+// Function to create an item at a specified position
+function addItem(x) {
+    item = new Item(x * canvas.width / 100, canvas.height / 2);
+}
+
+// Call addItem to create an initial item
+addItem(50);
+
+// Event listener for item size adjustment
+document.getElementById('item-size-slider').addEventListener('input', (e) => {
+    const size = parseInt(e.target.value, 10);
+    item.width = size;
+    item.height = size;
+});
+
+// Event listener for item type selection
+document.getElementById('item-type-select').addEventListener('change', (e) => {
+    const itemType = e.target.value;
+    if (itemType === 'type-1') {
+        item.hp = 100;
+        item.width = 50;
+        item.height = 50;
+    } else if (itemType === 'type-2') {
+        item.hp = 200;
+        item.width = 75;
+        item.height = 75;
+    }
+});
+
+// Allow item to be moved based on mouse clicks
+canvas.addEventListener('mousedown', (event) => {
+    if (event.button === 0) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        if (item) {
+            item.x = x;
+            item.y = y;
+        }
+    }
+});
+
+// Explosion creation with sound and particles
 function createExplosion(pos, soundFile, colors, volume) {
     const numParticles = 100;
     const particleEnergy = explosionEnergy / numParticles;
-  
+
     const sound = new Audio(soundFile);
-    sound.volume = volume; // Set the volume here
+    sound.volume = volume;
     sound.play();
-  
+
+    if (item && item.hp > 0) {
+        const damageSound = new Audio('damage.wav');
+        damageSound.volume = volume;
+        damageSound.play();
+    }
+
     for (let i = 0; i < numParticles; i++) {
         const color = colors[Math.floor(Math.random() * colors.length)];
         const radius = Math.random() * 3 + 2;
         particles.push(new Particle(pos.x, pos.y, radius, color, particleEnergy));
     }
-  
-    // Calculate damage to the item
+
     if (item) {
         const damage = calculateDamage(pos, item, explosionType);
         item.hp = Math.max(0, item.hp - damage);
@@ -127,54 +163,79 @@ function createExplosion(pos, soundFile, colors, volume) {
     }
 }
 
-// Animation loop to draw particles and item
+// Animation loop to draw particles and item, and display position
 function animate() {
     requestAnimationFrame(animate);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     particles = particles.filter(p => p.y > 0);
-    
     for (const particle of particles) {
         particle.update();
         particle.draw();
     }
-    
+
     if (item) {
-        item.draw(); // Draw the item if it exists
+        item.draw();
+        ctx.fillStyle = "white";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(`Item Position: (${item.x}, ${item.y})`, 10, 10);
     }
 }
 
-// Event listeners for explosions
+// Reset button for resetting the item's position and HP
+document.getElementById('reset-button').addEventListener('click', () => {
+    item.x = canvas.width / 2;
+    item.y = canvas.height / 2;
+    item.hp = 100;
+});
+
+// Get the color picker input
+const itemColorPicker = document.getElementById('item-color-picker');
+
+// Add an event listener to the color picker input
+itemColorPicker.addEventListener('input', (e) => {
+    // Update the item's color
+    item.color = e.target.value;
+});
+
 canvas.addEventListener('mousedown', (event) => {
-    let colors, soundFile;
-    if (explosionType === 1) {
-        colors = [document.getElementById('color-picker1').value,
-                  document.getElementById('color-picker2').value,
-                  document.getElementById('color-picker3').value,
-                  document.getElementById('color-picker4').value];
-        soundFile = 'explosion.wav';
-    } else {
-        colors = [document.getElementById('color-picker5').value,
-                  document.getElementById('color-picker6').value,
-                  document.getElementById('color-picker7').value,
-                  document.getElementById('color-picker8').value];
-        soundFile = 'explosion_2.mp3';
-    }
-    
-    if (event.button === 0) {
+    if (event.button === 2) { // Right mouse button
         const volume = parseFloat(document.getElementById('volume-slider').value);
+        let colors, soundFile;
+        if (explosionType === 1) {
+            colors = [
+                document.getElementById('color-picker1').value,
+                document.getElementById('color-picker2').value,
+                document.getElementById('color-picker3').value,
+                document.getElementById('color-picker4').value,
+            ];
+            soundFile = 'explosion.wav';
+        } else {
+            colors = [
+                document.getElementById('color-picker5').value,
+                document.getElementById('color-picker6').value,
+                document.getElementById('color-picker7').value,
+                document.getElementById('color-picker8').value,
+            ];
+            soundFile = 'explosion_2.mp3';
+        }
+        
         createExplosion({ x: event.clientX, y: event.clientY }, soundFile, colors, volume);
     }
 });
 
+// Volume control for sound effects
 document.getElementById('volume-slider').addEventListener('input', (e) => {
     const volume = parseFloat(e.target.value);
     document.getElementById('volume-value').innerText = volume.toFixed(2);
-    
-    // Update the volume of all audio elements
+
     const audioElements = document.querySelectorAll('audio');
     for (const audio of audioElements) {
         audio.volume = volume;
     }
 });
 
-animate(); // Start the animation loop
+// Start the animation loop
+animate();
