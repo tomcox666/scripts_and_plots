@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <title>Live Weather Radar - Manchester, UK</title>
+    <link href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" rel="stylesheet">
+    <style>
+      #map {
+        width: 800px;
+        height: 600px;
+        border: 1px solid black;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <select id="radar-select">
+      <option value="precipitation">Precipitation</option>
+      <option value="clouds">Clouds</option>
+      <option value="temp">Temperature</option>
+      <option value="wind">Wind</option>
+    </select>
+    <input type="datetime-local" id="time-input" />
+    <button id="update-button">Update</button>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+      const apiKey = '40c60293d9deac2ecec6b9d7cfdcf6a1'; // replace with your API key
+      const mapCenter = [53.4808, -2.2426]; // Manchester, UK coordinates
+      const zoomLevel = 8;
+      let radarLayer = 'precipitation';
+      let currentTime = new Date();
+
+      // Create the map
+      const map = L.map('map').setView(mapCenter, zoomLevel);
+
+      // Add a tile layer to the map
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+        subdomains: ['a', 'b', 'c']
+      }).addTo(map);
+
+      // Function to update the radar layer
+      function updateRadarLayer() {
+        const radarUrl = `https://api.openweathermap.org/data/2.5/radar/${radarLayer}/${zoomLevel}/${mapCenter[0]}/${mapCenter[1]}.png?appid=${apiKey}&_t=${currentTime.getTime()}`;
+        L.imageOverlay(radarUrl, [[50, -10], [60, 10]], {
+          opacity: 0.5,
+          zIndex: 10
+        }).addTo(map);
+      }
+
+      // Update the radar layer initially
+      updateRadarLayer();
+
+      // Add event listeners to the select and button
+      document.getElementById('radar-select').addEventListener('change', (event) => {
+        radarLayer = event.target.value;
+        updateRadarLayer();
+      });
+
+      document.getElementById('update-button').addEventListener('click', () => {
+        currentTime = new Date(document.getElementById('time-input').value);
+        updateRadarLayer();
+      });
+    </script>
+  </body>
+</html>
