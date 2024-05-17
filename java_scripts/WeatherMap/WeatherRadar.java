@@ -7,7 +7,7 @@ import javafx.stage.Stage;
 
 public class WeatherRadar extends Application {
 
-    private static final String OPENWEATHERMAP_API_KEY = "40c60293d9deac2ecec6b9d7cfdcf6a1";
+    private static final String OPENWEATHERMAP_API_KEY = "OPENWEATHERMAP_API_KEY";
 
     @Override
     public void start(Stage primaryStage) {
