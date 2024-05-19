@@ -1,0 +1,16 @@
+{
+    "manifest_version": 2,
+    "name": "Clipboard Manager",
+    "version": "1.0",
+    "description": "A simple clipboard manager that stores the last 10 copied texts.",
+    "permissions": ["activeTab", "clipboardRead", "clipboardWrite"],
+    "browser_action": {
+      "default_popup": "popup.html"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["script.js"]
+      }
+    ]
+  }
