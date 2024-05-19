@@ -1,0 +1,25 @@
+{
+    "manifest_version": 2,
+    "name": "Screen Reader",
+    "version": "1.0",
+    "description": "A Chrome extension that emulates a screen reader",
+    "icons": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "browser_action": {
+      "default_popup": "popup.html"
+    },
+    "background": {
+      "scripts": ["background.js"],
+      "persistent": false
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["contentScript.js"]
+      }
+    ],
+    "permissions": ["activeTab"]
+  }
