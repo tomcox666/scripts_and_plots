@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shopping Cart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        
+        .product {
+            margin-bottom: 20px;
+        }
+        
+        .product-image {
+            width: 100px;
+            height: 100px;
+            margin-right: 10px;
+            cursor: move;
+        }
+        
+        .cart {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+        
+        .cart-item {
+            margin-bottom: 10px;
+        }
+        
+        .cart-total {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .checkout-button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .checkout-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .product-details {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .product-details-inner {
+            background-color: #fff;
+            padding: 20px;
+            width: 80%;
+            margin: 40px auto;
+        }
+        
+        .product-details-inner img {
+            width: 50%;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            padding: 10px;
+            width: 50%;
+            font-size: 16px;
+        }
+        
+        .search-button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .wish-list {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+        
+        .wish-list-item {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shopping Cart</h1>
+    
+    <div class="login-form">
+        <h2>Login</h2>
+        <form id="login-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username"><br><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password"><br><br>
+            <input type="submit" value="Login">
+        </form>
+        <button id="logout-button" style="display: none;">Logout</button>
+    </div>
+    
+    <div class="search-bar">
+        <input class="search-input" type="text" id="search-input" placeholder="Search products...">
+        <button class="search-button" id="search-button">Search</button>
+    </div>
+    
+    <div class="products">
+        <div class="product" data-category="cars" data-product-id="product1" draggable="true">
+            <img class="product-image" src="toyota-camry.jpg" alt="Toyota Camry">
+            <h2>Toyota Camry</h2>
+            <p>$25,000</p>
+            <p>Quantity in stock: <span id="product1-quantity">10</span></p>
+            <label for="product1-quantity">Quantity:</label>
+            <select id="product1-quantity-select">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+            <button class="add-to-cart" data-product-id="product1" data-product-price="25000">Add to cart</button>
+            <button class="add-to-wish-list" data-product-id="product1">Add to wish list</button>
+        </div>
+        
+        <div class="product" data-category="cars" data-product-id="product2" draggable="true">
+            <img class="product-image" src="ford-mondeo.jpg" alt="Ford Mondeo">
+            <h2>Ford Mondeo</h2>
+            <p>$28,000</p>
+            <p>Quantity in stock: <span id="product2-quantity">5</span></p>
+            <label for="product2-quantity">Quantity:</label>
+            <select id="product2-quantity-select">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+            <button class="add-to-cart" data-product-id="product2" data-product-price="28000">Add to cart</button>
+            <button class="add-to-wish-list" data-product-id="product2">Add to wish list</button>
+        </div>
+    </div>
+    
+    <div class="cart" droppable="true">
+        <h2>Shopping Cart</h2>
+        <div class="cart-items"></div>
+        <p class="cart-total">Total: $0.00</p>
+        <button class="checkout-button" disabled>Checkout</button>
+    </div>
+    
+    <div class="wish-list">
+        <h2>Wish List</h2>
+        <div class="wish-list-items"></div>
+    </div>
+    
+    <div class="product-details">
+        <div class="product-details-inner">
+            <img src="" alt="" id="product-details-image">
+            <h2 id="product-details-name"></h2>
+            <p id="product-details-description"></p>
+            <p id="product-details-price"></p>
+            <button id="product-details-close">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let users = [
+            { username: 'admin', password: 'password' }
+        ];
+        
+        let cart = {};
+        let wishList = {};
+        let stock = {
+            product1: 10,
+            product2: 5
+        };
+        let currentUser = null;
+
+        // Login functionality
+        document.querySelector('#login-form').addEventListener('submit', event => {
+            event.preventDefault();
+            let username = document.querySelector('#username').value;
+            let password = document.querySelector('#password').value;
+            for (let user of users) {
+                if (user.username === username && user.password === password) {
+                    currentUser = user;
+                    document.querySelector('#login-form').style.display = 'none';
+                    document.querySelector('#logout-button').style.display = 'block';
+                    break;
+                }
+            }
+        });
+
+        document.querySelector('#logout-button').addEventListener('click', () => {
+            currentUser = null;
+            document.querySelector('#login-form').style.display = 'block';
+            document.querySelector('#logout-button').style.display = 'none';
+        });
+
+        // Add to cart functionality
+        document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', () => {
+                let productId = button.dataset.productId;
+                let productPrice = button.dataset.productPrice;
+                let quantity = parseInt(document.querySelector(`#${productId}-quantity-select`).value, 10);
+                let stockQuantity = stock[productId];
+
+                if (quantity > stockQuantity) {
+                    alert('Not enough products in stock!');
+                    return;
+                }
+
+                if (cart[productId]) {
+                    cart[productId].quantity += quantity;
+                } else {
+                    cart[productId] = {
+                        name: button.parentNode.querySelector('h2').textContent,
+                        price: productPrice,
+                        quantity: quantity
+                    };
+                }
+                updateCart();
+                stock[productId] -= quantity;
+                document.querySelector(`#${productId}-quantity`).textContent = stock[productId];
+            });
+        });
+
+        // Add to wish list functionality
+        document.querySelectorAll('.add-to-wish-list').forEach(button => {
+            button.addEventListener('click', () => {
+                let productId = button.dataset.productId;
+                let productName = button.parentNode.querySelector('h2').textContent;
+                let productPrice = button.parentNode.querySelector('p').textContent;
+
+                if (wishList[productId]) {
+                    alert('Product already in wish list!');
+                } else {
+                    wishList[productId] = {
+                        name: productName,
+                        price: productPrice
+                    };
+                    updateWishList();
+                }
+            });
+        });
+
+        // Update cart function
+        function updateCart() {
+            let cartItemsHtml = '';
+            let total = 0;
+
+            for (let productId in cart) {
+                let product = cart[productId];
+                let itemTotal = parseFloat(product.price) * product.quantity;
+
+                total += itemTotal;
+
+                cartItemsHtml += `
+                    <div class="cart-item">
+                        <h3>${product.name}</h3>
+                        <p>Quantity: ${product.quantity}</p>
+                        <p>Price: $${itemTotal.toFixed(2)}</p>
+                        <button class="remove-from-cart" data-product-id="${productId}">Remove</button>
+                    </div>
+                `;
+            }
+
+            document.querySelector('.cart-items').innerHTML = cartItemsHtml;
+            document.querySelector('.cart-total').textContent = `Total: $${total.toFixed(2)}`;
+
+            document.querySelector('.checkout-button').disabled = Object.keys(cart).length === 0;
+        }
+
+        // Update wish list function
+        function updateWishList() {
+            let wishListItemsHtml = '';
+
+            for (let productId in wishList) {
+                let product = wishList[productId];
+
+                wishListItemsHtml += `
+                    <div class="wish-list-item">
+                        <h3>${product.name}</h3>
+                        <p>Price: ${product.price}</p>
+                        <button class="remove-from-wish-list" data-product-id="${productId}">Remove</button>
+                        <button class="add-to-cart-from-wish-list" data-product-id="${productId}">Add to Cart</button>
+                    </div>
+                `;
+            }
+
+            document.querySelector('.wish-list-items').innerHTML = wishListItemsHtml;
+        }
+
+        // Remove from cart functionality
+        document.querySelector('.cart-items').addEventListener('click', event => {
+            if (event.target.classList.contains('remove-from-cart')) {
+                let productId = event.target.dataset.productId;
+                let quantity = cart[productId].quantity;
+                delete cart[productId];
+                updateCart();
+                stock[productId] += quantity;
+                document.querySelector(`#${productId}-quantity`).textContent = stock[productId];
+            }
+        });
+
+        // Remove from wish list functionality
+        document.querySelector('.wish-list-items').addEventListener('click', event => {
+            if (event.target.classList.contains('remove-from-wish-list')) {
+                let productId = event.target.dataset.productId;
+                delete wishList[productId];
+                updateWishList();
+            }
+        });
+
+        // Add to cart from wish list functionality
+        document.querySelector('.wish-list-items').addEventListener('click', event => {
+            if (event.target.classList.contains('add-to-cart-from-wish-list')) {
+                let productId = event.target.dataset.productId;
+                let productPrice = parseFloat(wishList[productId].price.replace('$', '').replace(',', ''));
+                let quantity = 1;
+                let stockQuantity = stock[productId];
+
+                if (quantity > stockQuantity) {
+                    alert('Not enough products in stock!');
+                    return;
+                }
+
+                if (cart[productId]) {
+                    cart[productId].quantity += quantity;
+                } else {
+                    cart[productId] = {
+                        name: wishList[productId].name,
+                        price: productPrice,
+                        quantity: quantity
+                    };
+                }
+                updateCart();
+                stock[productId] -= quantity;
+                document.querySelector(`#${productId}-quantity`).textContent = stock[productId];
+            }
+        });
+
+        // Drag and drop functionality
+        document.querySelectorAll('.product').forEach(product => {
+            product.addEventListener('dragstart', event => {
+                event.dataTransfer.setData('productId', product.dataset.productId);
+            });
+        });
+
+        document.querySelector('.cart').addEventListener('dragover', event => {
+            event.preventDefault();
+        });
+
+        document.querySelector('.cart').addEventListener('drop', event => {
+            event.preventDefault();
+            let productId = event.dataTransfer.getData('productId');
+            let productPrice = document.querySelector(`#${productId} .product-price`).textContent;
+            let quantity = 1;
+            let stockQuantity = stock[productId];
+
+            if (quantity > stockQuantity) {
+                alert('Not enough products in stock!');
+                return;
+            }
+
+            if (cart[productId]) {
+                cart[productId].quantity += quantity;
+            } else {
+                cart[productId] = {
+                    name: document.querySelector(`#${productId} h2`).textContent,
+                    price: productPrice,
+                    quantity: quantity
+                };
+            }
+            updateCart();
+            stock[productId] -= quantity;
+            document.querySelector(`#${productId}-quantity`).textContent = stock[productId];
+        });
+
+        // Checkout functionality
+        document.querySelector('.checkout-button').addEventListener('click', () => {
+            if (Object.keys(cart).length > 0) {
+                alert('Thank you for your order!');
+                cart = {};
+                updateCart();
+            }
+        });
+
+        // Product details functionality
+        document.querySelectorAll('.product-image').forEach(image => {
+            image.addEventListener('mouseover', () => {
+                let productId = image.parentNode.dataset.productId;
+                let productDetails = getProductDetails(productId);
+                showProductDetails(productDetails);
+            });
+
+            image.addEventListener('mouseout', () => {
+                document.querySelector('.product-details').style.display = 'none';
+            });
+        });
+
+        function getProductDetails(productId) {
+            let productDetails;
+            if (productId === 'product1') {
+                productDetails = {
+                    name: 'Toyota Camry',
+                    description: 'The Toyota Camry is a mid-size car that is known for its reliability, comfort, and strong resale value. It has a powerful 2.5L engine and a smooth 8-speed automatic transmission.',
+                    price: 25000,
+                    image: 'toyota-camry.jpg'
+                };
+            } else if (productId === 'product2') {
+                productDetails = {
+                    name: 'Ford Mondeo',
+                    description: 'The Ford Mondeo is a mid-size car that is known for its sleek design, comfortable ride, and advanced safety features. It has a powerful 2.0L engine and a smooth 6-speed automatic transmission.',
+                    price: 28000,
+                    image: 'ford-mondeo.jpg'
+                }
+            }
+            return productDetails;
+        }
+
+        function showProductDetails(productDetails) {
+            document.querySelector('#product-details-image').src = productDetails.image;
+            document.querySelector('#product-details-name').textContent = productDetails.name;
+            document.querySelector('#product-details-description').textContent = productDetails.description;
+            document.querySelector('#product-details-price').textContent = 'Price: $' + productDetails.price.toFixed(2);
+            document.querySelector('.product-details').style.display = 'block';
+        }
+
+        document.querySelector('#product-details-close').addEventListener('click', () => {
+            document.querySelector('.product-details').style.display = 'none';
+        });
+
+        // Search functionality
+        document.querySelector('#search-button').addEventListener('click', () => {
+            let searchInput = document.querySelector('#search-input').value.toLowerCase();
+            let products = document.querySelectorAll('.product');
+
+            products.forEach(product => {
+                let productName = product.querySelector('h2').textContent.toLowerCase();
+                let productCategory = product.dataset.category.toLowerCase();
+
+                if (productName.includes(searchInput) || productCategory.includes(searchInput)) {
+                    product.style.display = 'block';
+                } else {
+                    product.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

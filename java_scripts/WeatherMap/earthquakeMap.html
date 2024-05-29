@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Earthquake Map</title>
+
+    <!-- Include Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+
+    <!-- Include Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- Set up map styles -->
+    <style>
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        #filter-box {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid black;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #filter-box label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #filter-box select {
+            width: 100%;
+            height: 30px;
+            padding: 10px;
+            border: 1px solid black;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Create a div to hold the map -->
+    <div id="map"></div>
+
+    <!-- Create a div to hold the filter box -->
+    <div id="filter-box">
+        <label for="magnitude-filter">Magnitude:</label>
+        <select id="magnitude-filter">
+            <option value="all">All</option>
+            <option value="2.0">2.0+</option>
+            <option value="3.0">3.0+</option>
+            <option value="4.0">4.0+</option>
+            <option value="5.0">5.0+</option>
+        </select>
+
+        <label for="plate-tectonics-filter">Plate Tectonics:</label>
+        <select id="plate-tectonics-filter" multiple>
+            <option value="Pacific Plate">Pacific Plate</option>
+            <option value="North American Plate">North American Plate</option>
+            <option value="Eurasian Plate">Eurasian Plate</option>
+            <option value="African Plate">African Plate</option>
+            <option value="Antarctic Plate">Antarctic Plate</option>
+            <option value="Indo-Australian Plate">Indo-Australian Plate</option>
+            <option value="South American Plate">South American Plate</option>
+            <option value="Nazca Plate">Nazca Plate</option>
+            <option value="Cocos Plate">Cocos Plate</option>
+            <option value="Caribbean Plate">Caribbean Plate</option>
+            <option value="Arabian Plate">Arabian Plate</option>
+            <option value="Philippine Sea Plate">Philippine Sea Plate</option>
+        </select>
+    </div>
+
+    <!-- Script to load the map and earthquake data -->
+    <script>
+        // Set up the map
+        const map = L.map('map').setView([30, 0], 2); // Start at a reasonable zoom level
+
+        // Use OpenStreetMap tiles for the base map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+            subdomains: ['a', 'b', 'c']
+        }).addTo(map);
+
+        // Load earthquake data from the USGS Earthquake API
+        fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson')
+            .then(response => response.json())
+            .then(data => {
+                // Add markers for each earthquake
+                data.features.forEach(feature => {
+                    const magnitude = feature.properties.mag;
+                    const location = feature.properties.place;
+                    const depth = feature.geometry.coordinates[2];
+                    const time = new Date(feature.properties.time).toLocaleString();
+                    const url = feature.properties.url;
+
+                    // Create a marker at the earthquake's location
+                    const marker = L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]]);
+
+                    // Add a popup with magnitude, location, depth, and time information
+                    marker.bindPopup(`
+                        <b>Magnitude:</b> ${magnitude}<br>
+                        <b>Location:</b> ${location}<br>
+                        <b>Depth:</b> ${depth} km<br>
+                        <b>Time:</b> ${time}<br>
+                        <b>More Info:</b> <a href="${url}" target="_blank">USGS Event Page</a>
+                    `);
+
+                    // Add the marker to the map
+                    marker.addTo(map);
+                });
+            })
+            .catch(error => console.error('Error loading earthquake data:', error));
+
+        // Load tectonic plate data
+        fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json')
+            .then(response => response.json())
+            .then(data => {
+                // Create a layer group for the tectonic plate boundaries
+                const plateBoundaries = L.layerGroup();
+
+                // Add each plate boundary to the layer group
+                data.features.forEach(feature => {
+                    const plateBoundary = L.geoJSON(feature, {
+                        style: {
+                            color: 'red',
+                            weight: 2,
+                            opacity: 0.5
+                        },
+                        onEachFeature: (feature, layer) => {
+                            layer.bindPopup(`
+                                <b>Name:</b> ${feature.properties.Name}<br>
+                                <b>Type:</b> ${feature.properties.Type}<br>
+                                <b>Length:</b> ${feature.properties.Length} km<br>
+                                <b>Average earthquakes per year:</b> ${feature.properties.Avg_Eq_Per_Year}
+                            `);
+                        }
+                    });
+
+                    plateBoundaries.addLayer(plateBoundary);
+                });
+
+                // Add the layer group to the map
+                plateBoundaries.addTo(map);
+            })
+            .catch(error => console.error('Error loading tectonic plate data:', error));
+
+        // Add event listeners for the magnitude and plate tectonics filters
+        document.getElementById('magnitude-filter').addEventListener('change', event => {
+            const selectedMagnitude = event.target.value;
+
+            // Remove all markers from the map
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Load earthquake data from the USGS Earthquake API
+            fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    // Add markers for each earthquake that meets the magnitude filter
+                    data.features.forEach(feature => {
+                        const magnitude = feature.properties.mag;
+
+                        if (selectedMagnitude === 'all' || magnitude >= parseFloat(selectedMagnitude)) {
+                            const location = feature.properties.place;
+                            const depth = feature.geometry.coordinates[2];
+                            const time = new Date(feature.properties.time).toLocaleString();
+                            const url = feature.properties.url;
+
+                            // Create a marker at the earthquake's location
+                            const marker = L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]]);
+
+                            // Add a popup with magnitude, location, depth, and time information
+                            marker.bindPopup(`
+                                <b>Magnitude:</b> ${magnitude}<br>
+                                <b>Location:</b> ${location}<br>
+                                <b>Depth:</b> ${depth} km<br>
+                                <b>Time:</b> ${time}<br>
+                                <b>More Info:</b> <a href="${url}" target="_blank">USGS Event Page</a>
+                            `);
+
+                            // Add the marker to the map
+                            marker.addTo(map);
+                        }
+                    });
+                })
+                .catch(error => console.error('Error loading earthquake data:', error));
+        });
+
+        document.getElementById('plate-tectonics-filter').addEventListener('change', event => {
+            const selectedPlates = Array.from(event.target.options).filter(option => option.selected).map(option => option.value);
+
+            // Remove all plate boundaries from the map
+            map.eachLayer(layer => {
+                if (layer instanceof L.Polyline) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Load tectonic plate data
+            fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Create a layer group for the tectonic plate boundaries
+                    const plateBoundaries = L.layerGroup();
+
+                    // Add each plate boundary to the layer group
+                    data.features.forEach(feature => {
+                        if (selectedPlates.includes(feature.properties.Name)) {
+                            const plateBoundary = L.geoJSON(feature, {
+                                style: {
+                                    color: 'red',
+                                    weight: 2,
+                                    opacity: 0.5
+                                },
+                                onEachFeature: (feature, layer) => {
+                                    layer.bindPopup(`
+                                        <b>Name:</b> ${feature.properties.Name}<br>
+                                        <b>Type:</b> ${feature.properties.Type}<br>
+                                        <b>Length:</b> ${feature.properties.Length} km<br>
+                                        <b>Average earthquakes per year:</b> ${feature.properties.Avg_Eq_Per_Year}
+                                    `);
+                                }
+                            });
+
+                            plateBoundaries.addLayer(plateBoundary);
+                        }
+                    });
+
+                    // Add the layer group to the map
+                    plateBoundaries.addTo(map);
+                })
+                .catch(error => console.error('Error loading tectonic plate data:', error));
+        });
+    </script>
+</body>
+</html>

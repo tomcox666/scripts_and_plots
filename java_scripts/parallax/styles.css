@@ -1,0 +1,84 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #333; /* Added dark background color */
+  }
+  
+  .parallax-container {
+    position: relative; /* Added relative positioning */
+    height: 200vh; /* Increased height to allow for scrolling */
+    overflow-y: scroll;
+    perspective: 1px;
+    perspective-origin: 50% 50%; /* Adjusted perspective-origin */
+  }
+  
+  .parallax-background {
+    position: absolute; /* Changed to absolute positioning */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    transform: translateZ(-1px) scale(2);
+    z-index: -3; /* Changed z-index to -3 */
+  }
+  
+  .parallax-background img {
+    width: 100%;
+    height: 100vh;
+    object-fit: cover;
+  }
+  
+  .parallax-background-layer-1 {
+    position: absolute; /* Changed to absolute positioning */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    transform: translateZ(-0.5px) scale(1.5);
+    z-index: -2; /* Changed z-index to -2 */
+  }
+  
+  .parallax-background-layer-1 img {
+    width: 100%;
+    height: 100vh;
+    object-fit: cover;
+  }
+  
+  .parallax-background-layer-2 {
+    position: absolute; /* Changed to absolute positioning */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    transform: translateZ(0px) scale(1);
+    z-index: -1; /* Changed z-index to -1 */
+  }
+  
+  .parallax-background-layer-2 img {
+    width: 100%;
+    height: 100vh;
+    object-fit: cover;
+  }
+  
+  .parallax-midground {
+    position: absolute; /* Changed to absolute positioning */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    transform: translateZ(0.5px) scale(1.5);
+    z-index: 1; /* Changed z-index to 1 */
+  }
+  
+  .parallax-midground img {
+    width: 100%;
+    height: 100vh;
+    object-fit: cover;
+  }
+  
+  .content {
+    position: relative;
+    z-index: 2; /* Changed z-index to 2 */
+    padding: 100vh 20px;
+    background-color: rgba(255, 255, 255, 0.096);
+  }

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Interactive Map Quiz</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+    crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+    integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+    crossorigin=""></script>
+  <style>
+    #map {
+      height: 500px;
+      width: 800px;
+      border: 1px solid black;
+    }
+
+    .question {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .result {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .score {
+      font-size: 18px;
+      font-weight: bold;
+      color: green;
+    }
+
+    .leaderboard {
+      font-size: 18px;
+      font-weight: bold;
+      color: blue;
+    }
+
+    .completion-message {
+      font-size: 24px;
+      font-weight: bold;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <p class="question" id="question"></p>
+  <p class="timer" id="timer"></p>
+  <p class="result" id="result"></p>
+  <p class="score" id="score">Score: 0</p>
+  <p class="leaderboard" id="leaderboard">Leaderboard:</p>
+  <button id="restart-button">Restart</button>
+  <p class="completion-message" id="completion-message"></p>
+
+  <script>
+    // Array of quiz questions
+    const questions = [
+      {name: "Paris", coordinates: [48.8566, 2.3522]},
+      {name: "London", coordinates: [51.5074, -0.1278]},
+      {name: "New York", coordinates: [40.7128, -74.0060]},
+      {name: "Tokyo", coordinates: [35.6895, 139.7670]},
+      {name: "Beijing", coordinates: [39.9042, 116.3974]},
+      {name: "Mumbai", coordinates: [19.0760, 72.8777]},
+      {name: "São Paulo", coordinates: [-23.5479, -46.6358]},
+      {name: "Moscow", coordinates: [55.7558, 37.6173]},
+      {name: "Sydney", coordinates: [-33.8679, 151.2093]},
+      // Add more questions here...
+    ];
+
+    let score = 0;
+    let round = 0;
+    let leaderboard = [];
+    let timerInterval;
+    let clickedLatLng;
+
+    // Initialize the map
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+      subdomains: ['a', 'b', 'c']
+    }).addTo(map);
+
+    // Function to get a random question from the array
+    function getRandomQuestion() {
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+
+    // Get a random question
+    let currentQuestion = getRandomQuestion();
+
+    // Display the question
+    document.getElementById("question").innerHTML = `Click on ${currentQuestion.name}`;
+
+    // Function to calculate distance between two points
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // meters
+      const φ1 = lat1 * Math.PI/180; // φ, λ in radians
+      const φ2 = lat2 * Math.PI/180;
+      const Δφ = (lat2-lat1) * Math.PI/180;
+      const Δλ = (lon2-lon1) * Math.PI/180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      const d = R * c; // in meters
+
+      return d;
+    }
+
+    // Function to calculate score based on time and distance
+    function calculateScore(time, distance) {
+      let distanceBonus = 0;
+      if (distance < 15000) { // Within 15 km
+        distanceBonus = 1000;
+      } else if (distance < 30000) { // Within 30 km
+        distanceBonus = 500;
+      } else if (distance < 60000) { // Within 60 km
+        distanceBonus = 100;
+      }
+
+      let speedBonus = 0;
+      if (time < 5) { // Answered in under 5 seconds
+        speedBonus = 200;
+      } else if (time < 10) { // Answered in under 10 seconds
+        speedBonus = 100;
+      }
+
+      return distanceBonus + speedBonus;
+    }
+
+    // Function to start the timer
+    function startTimer() {
+      let time = 30;
+      clearInterval(timerInterval); // Clear any existing timer interval
+      timerInterval = setInterval(() => {
+        document.getElementById("timer").innerHTML = `Time left: ${time} seconds`;
+        time--;
+        if (time === 0) {
+          clearInterval(timerInterval);
+          nextQuestion();
+        }
+      }, 1000);
+    }
+
+    // Function to go to the next question
+    function nextQuestion() {
+      round++;
+      if (round > 10) {
+        updateLeaderboard();
+        round = 0;
+        score = 0;
+        document.getElementById("question").innerHTML = "";
+        document.getElementById("timer").innerHTML = "";
+        document.getElementById("result").innerHTML = "";
+        document.getElementById("score").innerHTML = `Score: 0`;
+        document.getElementById("completion-message").innerHTML = "Quiz completed! Review your answers on the map.";
+      } else {
+        currentQuestion = getRandomQuestion();
+        document.getElementById("question").innerHTML = `Click on ${currentQuestion.name}`;
+        document.getElementById("result").innerHTML = "";
+        document.getElementById("score").innerHTML = `Score: ${score}`;
+        startTimer();
+      }
+    }
+
+    // Function to update the leaderboard
+    function updateLeaderboard() {
+      leaderboard.push(score);
+      leaderboard.sort((a, b) => b - a);
+      const leaderboardHTML = leaderboard.slice(0, 5).map((score, index) => {
+        return `${index + 1}. Score: ${score}`;
+      }).join("<br>");
+      document.getElementById("leaderboard").innerHTML = `Leaderboard:<br>${leaderboardHTML}`;
+    }
+
+    // Start the timer for the first question
+    startTimer();
+
+    // Add click event listener to the map
+    map.on('click', (e) => {
+      clickedLatLng = e.latlng;
+      const correctLat = currentQuestion.coordinates[0];
+      const correctLon = currentQuestion.coordinates[1];
+
+      const distance = calculateDistance(clickedLatLng.lat, clickedLatLng.lng, correctLat, correctLon);
+      const time = 30 - parseInt(document.getElementById("timer").innerHTML.split(" ")[2]);
+      const questionScore = calculateScore(time, distance);
+      score += questionScore;
+
+      // Draw circles around the city
+      L.circle([correctLat, correctLon], 15000, {color: 'blue'}).addTo(map);
+      L.circle([correctLat, correctLon], 30000, {color: 'yellow'}).addTo(map);
+      L.circle([correctLat, correctLon], 60000, {color: 'red'}).addTo(map);
+
+      // Highlight the radius in which the user clicked
+      if (distance < 15000) {
+        L.circle([clickedLatLng.lat, clickedLatLng.lng], distance, {color: 'green'}).addTo(map);
+      } else if (distance < 30000) {
+        L.circle([clickedLatLng.lat, clickedLatLng.lng], distance, {color: 'orange'}).addTo(map);
+      } else {
+        L.circle([clickedLatLng.lat, clickedLatLng.lng], distance, {color: 'red'}).addTo(map);
+      }
+
+      // Draw a line from the click to the city
+      L.polyline([[clickedLatLng.lat, clickedLatLng.lng], [correctLat, correctLon]], {color: 'red'}).addTo(map);
+
+      if (distance < 15000) { // If the distance is less than 15 km
+        document.getElementById("result").innerHTML = `Correct! You are within 15 km of ${currentQuestion.name}. Your score is ${questionScore} points (distance bonus: ${distance < 15000 ? 1000 : distance < 30000 ? 500 : distance < 60000 ? 100 : 0}, speed bonus: ${time < 5 ? 200 : time < 10 ? 100 : 0})`;
+      } else {
+        document.getElementById("result").innerHTML = `Incorrect. The correct location of ${currentQuestion.name} is at latitude: ${correctLat}, longitude: ${correctLon}. Your score is ${questionScore} points (distance bonus: ${distance < 15000 ? 1000 : distance < 30000 ? 500 : distance < 60000 ? 100 : 0}, speed bonus: ${time < 5 ? 200 : time < 10 ? 100 : 0})`;
+      }
+
+      document.getElementById("score").innerHTML = `Score: ${score}`;
+
+      nextQuestion();
+    });
+
+    // Add event listener to the restart button
+    document.getElementById("restart-button").addEventListener("click", () => {
+      round = 0;
+      score = 0;
+      document.getElementById("question").innerHTML = "";
+      document.getElementById("timer").innerHTML = "";
+      document.getElementById("result").innerHTML = "";
+      document.getElementById("score").innerHTML = `Score: 0`;
+      document.getElementById("completion-message").innerHTML = "";
+      startTimer();
+    });
+  </script>
+</body>
+</html>

@@ -20,14 +20,17 @@
       <option value="wind">Wind</option>
     </select>
     <input type="datetime-local" id="time-input" />
-    <button id="update-button">Update</button>
+    <input type="range" id="time-slider" min="0" max="23" value="0" />
+    <span id="time-label"></span>
+    <div id="legend"></div>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-      const apiKey = 'OPENWEATHERMAP_API_KEY'; // replace with your API key
+      const apiKey = '40c60293d9deac2ecec6b9d7cfdcf6a1'; // replace with your API key
       const mapCenter = [53.4808, -2.2426]; // Manchester, UK coordinates
       const zoomLevel = 8;
       let radarLayer = 'precipitation';
       let currentTime = new Date();
+      let currentRadarLayer = null;
 
       // Create the map
       const map = L.map('map').setView(mapCenter, zoomLevel);
@@ -40,26 +43,61 @@
 
       // Function to update the radar layer
       function updateRadarLayer() {
-        const radarUrl = `https://api.openweathermap.org/data/2.5/radar/${radarLayer}/${zoomLevel}/${mapCenter[0]}/${mapCenter[1]}.png?appid=${apiKey}&_t=${currentTime.getTime()}`;
-        L.imageOverlay(radarUrl, [[50, -10], [60, 10]], {
+        if (currentRadarLayer) {
+          map.removeLayer(currentRadarLayer);
+        }
+
+        const radarUrl = `https://tile.openweathermap.org/map/${radarLayer}/{z}/{x}/{y}.png?appid=${apiKey}&_t=${currentTime.getTime()}`;
+        currentRadarLayer = L.tileLayer(radarUrl, {
           opacity: 0.5,
           zIndex: 10
         }).addTo(map);
+
+        // Add legend for the weather layer
+        const legend = document.getElementById('legend');
+        legend.innerHTML = '';
+        if (radarLayer === 'precipitation') {
+          legend.innerHTML = '<span style="background-color: blue;">Heavy precipitation</span><br><span style="background-color: green;">Moderate precipitation</span><br><span style="background-color: yellow;">Light precipitation</span>';
+        } else if (radarLayer === 'clouds') {
+          legend.innerHTML = '<span style="background-color: white;">Clear sky</span><br><span style="background-color: lightgray;">Few clouds</span><br><span style="background-color: gray;">Broken clouds</span><br><span style="background-color: darkgray;">Overcast</span>';
+        } else if (radarLayer === 'temp') {
+          legend.innerHTML = '<span style="background-color: blue;">Low temperature</span><br><span style="background-color: red;">High temperature</span>';
+        } else if (radarLayer === 'wind') {
+          legend.innerHTML = '<span style="background-color: green;">Low wind speed</span><br><span style="background-color: orange;">Moderate wind speed</span><br><span style="background-color: red;">High wind speed</span>';
+        }
       }
 
       // Update the radar layer initially
       updateRadarLayer();
 
-      // Add event listeners to the select and button
+      // Add event listeners to the select, input and slider
       document.getElementById('radar-select').addEventListener('change', (event) => {
         radarLayer = event.target.value;
         updateRadarLayer();
       });
 
-      document.getElementById('update-button').addEventListener('click', () => {
-        currentTime = new Date(document.getElementById('time-input').value);
+      const timeInput = document.getElementById('time-input');
+      timeInput.addEventListener('change', () => {
+        currentTime = new Date(timeInput.value);
+        const hour = currentTime.getHours();
+        timeSlider.value = hour;
         updateRadarLayer();
       });
+
+      const timeSlider = document.getElementById('time-slider');
+      const timeLabel = document.getElementById('time-label');
+
+      timeSlider.addEventListener('input', () => {
+        const hour = parseInt(timeSlider.value);
+        const date = new Date();
+        date.setHours(hour);
+        currentTime = date;
+        timeInput.value = date.toISOString().slice(0, 16);
+        timeLabel.innerText = date.toLocaleTimeString();
+        updateRadarLayer();
+      });
+
+      timeSlider.dispatchEvent(new Event('input'));
     </script>
   </body>
 </html>

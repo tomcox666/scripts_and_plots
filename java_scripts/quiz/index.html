@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JavaScript Quiz</title>
+  <style>
+    /* Add some basic styling to make the quiz look better */
+    #quiz-container {
+      font-family: Arial, sans-serif;
+      width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .question {
+      margin-bottom: 20px;
+    }
+    
+    .question .question-text {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .question .answers {
+      margin-bottom: 20px;
+    }
+    
+    .question .answers label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    
+    .question .feedback {
+      font-style: italic;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    
+    .score {
+      font-weight: bold;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    
+    #timer {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="quiz-container"></div>
+  <button id="submit-btn">Submit</button>
+  <button id="retake-btn" style="display: none;">Retake Quiz</button>
+  <p id="timer"></p>
+  <select id="difficulty-select">
+    <option value="basic">Basic</option>
+    <option value="intermediate">Intermediate</option>
+    <option value="advanced">Advanced</option>
+  </select>
+  
+  <script>
+    // Define the questions and answers for each difficulty level
+    const questions = {
+      basic: [
+        {
+          question: "What is the capital of France?",
+          answers: [
+            { text: "Paris", correct: true },
+            { text: "London", correct: false },
+            { text: "Berlin", correct: false },
+            { text: "Rome", correct: false }
+          ]
+        },
+        {
+          question: "What is the largest planet in our solar system?",
+          answers: [
+            { text: "Earth", correct: false },
+            { text: "Saturn", correct: false },
+            { text: "Jupiter", correct: true },
+            { text: "Uranus", correct: false }
+          ]
+        },
+        // Add more basic questions here...
+      ],
+      intermediate: [
+        {
+          question: "What is the smallest country in the world?",
+          answers: [
+            { text: "Vatican City", correct: true },
+            { text: "Monaco", correct: false },
+            { text: "Nauru", correct: false },
+            { text: "Tuvalu", correct: false }
+          ]
+        },
+        {
+          question: "What is the largest living species of lizard?",
+          answers: [
+            { text: "Komodo dragon", correct: true },
+            { text: "Saltwater crocodile", correct: false },
+            { text: "Black mamba", correct: false },
+            { text: "African elephant", correct: false }
+          ]
+        },
+        // Add more intermediate questions here...
+      ],
+      advanced: [
+        {
+          question: "What is the highest mountain in the solar system?",
+          answers: [
+            { text: "Mount Everest", correct: false },
+            { text: "Olympus Mons", correct: true },
+            { text: "Mauna Kea", correct: false },
+            { text: "Denali", correct: false }
+          ]
+        },
+        {
+          question: "What is the deepest part of the ocean?",
+          answers: [
+            { text: "Mariana Trench", correct: true },
+            { text: "Challenger Deep", correct: false },
+            { text: "Tonga Trench", correct: false },
+            { text: "Kermadec Trench", correct: false }
+          ]
+        },
+        // Add more advanced questions here...
+      ]
+    };
+    
+    // Get the selected difficulty level
+    const difficultySelect = document.getElementById("difficulty-select");
+    let difficulty = difficultySelect.value;
+    
+    // Randomize the question order
+    questions[difficulty].sort(() => Math.random() - 0.5);
+    
+    // Create the quiz HTML
+    const quizContainer = document.getElementById("quiz-container");
+    let score = 0;
+    let currentQuestion = 0;
+    let timer = 60; // 1 minute
+    
+    // Function to create a single question
+    function createQuestion(index) {
+      const question = questions[difficulty][index];
+      const questionHTML = `
+        <div class="question">
+          <h2 class="question-text">${question.question}</h2>
+          <div class="answers">
+            ${question.answers.map((answer, i) => `
+              <label>
+                <input type="radio" name="answer" value="${i}" />
+                ${answer.text}
+              </label>
+            `).join("")}
+          </div>
+          <p class="feedback"></p>
+        </div>
+      `;
+      quizContainer.innerHTML = questionHTML;
+    }
+    
+    // Start the quiz
+    createQuestion(currentQuestion);
+    
+    // Add event listener to the submit button
+    document.getElementById("submit-btn").addEventListener("click", () => {
+      // Check if an answer has been selected
+      const selectedAnswer = quizContainer.querySelector("input:checked");
+      if (!selectedAnswer) {
+        alert("Please select an answer.");
+        return;
+      }
+      
+      // Check if the answer is correct
+      const correct = questions[difficulty][currentQuestion].answers[selectedAnswer.value].correct;
+      const feedback = quizContainer.querySelector(".feedback");
+      if (correct) {
+        feedback.textContent = "Correct!";
+        score++;
+      } else {
+        feedback.textContent = `Incorrect. The correct answer is ${questions[difficulty][currentQuestion].answers.find(answer => answer.correct).text}.`;
+      }
+      
+      // Move on to the next question
+      currentQuestion++;
+      if (currentQuestion < questions[difficulty].length) {
+        createQuestion(currentQuestion);
+      } else {
+        // Display the final score
+        quizContainer.innerHTML = `
+          <p class="score">You scored ${score} out of ${questions[difficulty].length}.</p>
+          <p>Here's a breakdown of your performance:</p>
+          <ul>
+            ${questions[difficulty].map((question, i) => `
+              <li>
+                ${question.question} - ${question.answers.find(answer => answer.correct).text}
+                ${score > i ? "" : " (You got this one wrong)"}
+              </li>
+            `).join("")}
+          </ul>
+        `;
+        
+        // Show the retake button
+        document.getElementById("retake-btn").style.display = "block";
+      }
+    });
+    
+    // Add event listener to the retake button
+    document.getElementById("retake-btn").addEventListener("click", () => {
+      // Reset the quiz
+      score = 0;
+      currentQuestion = 0;
+      timer = 60;
+      questions[difficulty].sort(() => Math.random() - 0.5);
+      createQuestion(currentQuestion);
+      document.getElementById("retake-btn").style.display = "none";
+    });
+    
+    // Add event listener to the difficulty select
+    difficultySelect.addEventListener("change", () => {
+      difficulty = difficultySelect.value;
+      questions[difficulty].sort(() => Math.random() - 0.5);
+      createQuestion(currentQuestion);
+    });
+    
+    // Start the timer
+    setInterval(() => {
+      timer--;
+      document.getElementById("timer").textContent = `Time remaining: ${timer} seconds`;
+      if (timer === 0) {
+        // Automatically submit the quiz
+        document.getElementById("submit-btn").click();
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="chat-window"></div>
+    <form id="username-form">
+        <input type="text" id="username-input" placeholder="Enter your username...">
+        <button id="set-username-button">Set Username</button>
+    </form>
+    <form id="chat-form">
+        <input type="text" id="chat-input" placeholder="Type a message...">
+        <button id="send-button">Send</button>
+        <button id="bold-button">Bold</button>
+        <button id="italic-button">Italic</button>
+        <button id="underline-button">Underline</button>
+        <button id="strike-button">Strike</button>
+        <button id="red-button">Red</button>
+        <button id="green-button">Green</button>
+        <button id="blue-button">Blue</button>
+        <button id="emoji-button">Emoji</button>
+        <button id="image-button">Image</button>
+    </form>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const boldButton = document.getElementById('bold-button');
+        const italicButton = document.getElementById('italic-button');
+        const underlineButton = document.getElementById('underline-button');
+        const strikeButton = document.getElementById('strike-button');
+        const redButton = document.getElementById('red-button');
+        const greenButton = document.getElementById('green-button');
+        const blueButton = document.getElementById('blue-button');
+        const emojiButton = document.getElementById('emoji-button');
+        const imageButton = document.getElementById('image-button');
+        const usernameForm = document.getElementById('username-form');
+        const usernameInput = document.getElementById('username-input');
+        const setUsernameButton = document.getElementById('set-username-button');
+
+        let username = 'Anonymous';
+        let textColor = '';
+
+        // Set up WebSocket connection
+        let socket = new WebSocket('ws://localhost:8080');
+
+        // On connection established
+        socket.onopen = function() {
+            console.log('Connected to the WebSocket server');
+        };
+
+        // On message received from server
+        socket.onmessage = function(event) {
+            console.log('Received message from server:', event.data);
+            const message = JSON.parse(event.data);
+
+            // Add message to chat window
+            if (message.username === username) {
+                chatWindow.innerHTML += `<p style="color: ${message.color}">${message.username}: ${message.message}</p>`;
+            } else {
+                chatWindow.innerHTML += `<p style="color: ${message.color}">${message.username}: ${message.message}</p>`;
+                notifyNewMessage(message.username);
+            }
+        };
+
+        // On connection error
+        socket.onerror = function(error) {
+            console.log('Error occurred:', error);
+        };
+
+        // On connection close
+        socket.onclose = function() {
+            console.log('Connection closed');
+        };
+
+        // Send message on form submission
+        chatForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let message = chatInput.value;
+
+            // Apply formatting options
+            if(boldButton.classList.contains('active')){
+                message = `<span class="bold-text">${message}</span>`;
+            }
+            if(italicButton.classList.contains('active')){
+                message = `<span class="italic-text">${message}</span>`;
+            }
+            if(underlineButton.classList.contains('active')){
+                message = `<span class="underline-text">${message}</span>`;
+            }
+            if(strikeButton.classList.contains('active')){
+                message = `<span class="strike-text">${message}</span>`;
+            }
+
+            // Apply text color
+            if(redButton.classList.contains('active')){
+                textColor = 'red';
+            } else if(greenButton.classList.contains('active')){
+                textColor = 'green';
+            } else if(blueButton.classList.contains('active')){
+                textColor = 'blue';
+            } else {
+                textColor = '';
+            }
+
+            // Apply emoji
+            if(emojiButton.classList.contains('active')){
+                message += ' 😊';
+            }
+
+            // Apply image
+            if(imageButton.classList.contains('active')){
+                message += ' <img src="image.jpg">';
+            }
+
+            // Send message to server
+            socket.send(JSON.stringify({
+                username: username,
+                message: message,
+                color: textColor
+            }));
+
+            // Clear input field
+            chatInput.value = '';
+        });
+
+        // Add event listeners for formatting buttons
+        boldButton.addEventListener('click', function() {
+            boldButton.classList.toggle('active');
+        });
+
+        italicButton.addEventListener('click', function() {
+            italicButton.classList.toggle('active');
+        });
+
+        underlineButton.addEventListener('click', function() {
+            underlineButton.classList.toggle('active');
+        });
+
+        strikeButton.addEventListener('click', function() {
+            strikeButton.classList.toggle('active');
+        });
+
+        redButton.addEventListener('click', function() {
+            redButton.classList.toggle('active');
+            greenButton.classList.remove('active');
+            blueButton.classList.remove('active');
+        });
+
+        greenButton.addEventListener('click', function() {
+            greenButton.classList.toggle('active');
+            redButton.classList.remove('active');
+            blueButton.classList.remove('active');
+        });
+
+        blueButton.addEventListener('click', function() {
+            blueButton.classList.toggle('active');
+            redButton.classList.remove('active');
+            greenButton.classList.remove('active');
+        });
+
+        emojiButton.addEventListener('click', function() {
+            emojiButton.classList.toggle('active');
+        });
+
+        imageButton.addEventListener('click', function() {
+            imageButton.classList.toggle('active');
+        });
+
+        // Set username on form submission
+        usernameForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            username = usernameInput.value;
+
+            // Clear input field
+            usernameInput.value = '';
+
+            console.log(`Username set to ${username}`);
+        });
+
+        // Function to notify new message
+        function notifyNewMessage(username) {
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
+            } else if (Notification.permission === "granted") {
+                var notification = new Notification(`New message from ${username}`);
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === "granted") {
+                        var notification = new Notification(`New message from ${username}`);
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
