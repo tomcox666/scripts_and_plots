@@ -17,6 +17,8 @@ def initialize_forest(size, density, firebreak_freq, firebreak_width, lake_freq,
     for _ in range(num_lakes):
         while True:  # Ensures lake doesn't overwrite firebreaks
             center_x, center_y = np.random.randint(0, size, size=2)
+            if lake_freq < 2:
+                lake_freq = 2
             radius = np.random.randint(size // lake_freq, size // (lake_freq // 2))
             is_valid = True
             for i in range(center_x - radius, center_x + radius):

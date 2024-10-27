@@ -1,0 +1,46 @@
+Debug the following script, when I run it I get the follwoing error:
+
+ERROR:
+Traceback (most recent call last):
+  File "blur_faces.py", line 7, in <module>
+    net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
+cv2.error: OpenCV(4.9.0) /io/opencv/modules/dnn/src/caffe/caffe_io.cpp:1126: error: (-2:Unspecified error) FAILED: fs.is_open(). Can't open "deploy.prototxt" in function 'ReadProtoFromTextFile'
+
+SCRIPT:
+
+import cv2
+import sys
+
+prototxt_path = 'deploy.prototxt'
+caffemodel_path = 'res10_300x300_ssd_iter_140000_fp16.caffemodel'
+
+net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
+
+image_path = 'input_image.jpg'
+image = cv2.imread(image_path)
+
+if image is None:
+  print("Error: Could not read image. Check the file path.")
+  sys.exit(1)
+
+(h, w) = image.shape[:2]
+
+blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), (104.0, 177.0, 123.0), swapRB=True, crop=False)
+
+net.setInput(blob)
+detections = net.forward()
+
+confidence_threshold = 0.01
+
+for i in range(0, detections.shape[2]):
+    confidence = detections[0, 0, i, 3]
+
+if confidence > confidence_threshold:
+    box = detections[0, 0, i, 3:7] * [w, h, w, h]
+    (x1, y1, x2, y2) = box.astype("int")
+
+    x1, y1, x2, y2 = max(y1, 0), max(x1, 0), min(y2, h), min(x2, w)
+
+    roi = image[y1:y2, x1:x2]
+    blurred_roi = cv2.medianBlur(roi, 31)
+    image[y1:y2, x1:x2] = blurred_roi

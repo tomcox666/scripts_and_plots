@@ -1,0 +1,9 @@
+Number,formatted
+0.0,Zero and 00/100
+10.0,Ten and 00/100
+34.56,Thirty Four and 56/100
+110.0,One Hundred Ten and 00/100
+123.0,One Hundred Twenty Three and 00/100
+4567.0,Four Thousand Five Hundred Sixty Seven and 00/100
+1234567.0,One Million Two Hundred Thirty Four Thousand Five Hundred Sixty Seven and 00/100
+987654321012.0,Nine Hundred Eighty Seven Billion Six Hundred Fifty Four Million Three Hundred Twenty One Thousand Twelve and 00/100
